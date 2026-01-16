@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import usePartySocket from "partysocket/react"
+import { generateAvatar } from "../utils/avatar"
 import styles from "./GameCanvas.module.css"
 
 type Player = {
@@ -67,14 +68,10 @@ function GameCanvasInner({
     },
     onClose(evt) {
       if (evt.code === 4000) {
-        alert(
-          "This room is password protected and the password you entered was incorrect. Returning to lobby."
-        )
-        window.location.href = "/"
+        window.location.href = "/?error=password"
       }
       if (evt.code === 4001) {
-        alert("Room closed due to inactivity.")
-        window.location.href = "/"
+        window.location.href = "/?error=inactivity"
       }
     },
   })
@@ -237,9 +234,16 @@ function GameCanvasInner({
               p.id === activePlayerId ? styles.active : ""
             } ${!p.isAlive ? styles.dead : ""}`}
           >
-            <h3>
-              {p.name} {p.id === socket.id ? "(You)" : ""}
-            </h3>
+            <div className={styles.playerInfo}>
+              <img
+                src={`data:image/svg+xml;base64,${btoa(generateAvatar(p.id))}`}
+                alt="Avatar"
+                className={styles.avatar}
+              />
+              <h3>
+                {p.name} {p.id === socket.id ? "(You)" : ""}
+              </h3>
+            </div>
             <div className={styles.lives}>
               {"❤".repeat(Math.max(0, p.lives))}
             </div>

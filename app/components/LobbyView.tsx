@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import usePartySocket from "partysocket/react"
 
 export default function LobbyView() {
@@ -7,6 +7,21 @@ export default function LobbyView() {
   >([])
   const [newRoomName, setNewRoomName] = useState("")
   const [roomPassword, setRoomPassword] = useState("")
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const err = params.get("error")
+    if (err === "password") setErrorMsg("Invalid password provided.")
+    if (err === "inactivity")
+      setErrorMsg("You were disconnected due to inactivity.")
+
+    // Clean URL
+    if (err) {
+      window.history.replaceState({}, "", "/")
+    }
+  }, [])
 
   usePartySocket({
     party: "lobby",
@@ -36,6 +51,33 @@ export default function LobbyView() {
       <div className="card">
         <h1 style={{ color: "var(--accent-color)" }}>💣 BlitzParty Lobby</h1>
         <p>Choose a room to join or create a new one.</p>
+
+        {errorMsg && (
+          <div
+            style={{
+              background: "#ff4444",
+              color: "white",
+              padding: "10px",
+              borderRadius: "4px",
+              margin: "1rem 0",
+              fontWeight: "bold",
+            }}
+          >
+            {errorMsg}
+            <button
+              onClick={() => setErrorMsg(null)}
+              style={{
+                float: "right",
+                background: "none",
+                border: "none",
+                color: "white",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <form
           onSubmit={handleCreate}

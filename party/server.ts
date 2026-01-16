@@ -64,8 +64,8 @@ export default class Server implements Party.Server {
   checkInactivity() {
     if (this.players.size === 0) return
 
-    // 10 minutes timeout
-    const TIMEOUT = 10 * 60 * 1000
+    // 2 minutes timeout
+    const TIMEOUT = 2 * 60 * 1000
     if (Date.now() - this.lastActivity > TIMEOUT) {
       for (const conn of this.room.getConnections()) {
         conn.close(4001, "Inactivity")
