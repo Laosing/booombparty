@@ -1,0 +1,6 @@
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+
+patchedDependencies:
+  sql.js@1.13.0: patches/sql.js@1.13.0.patch

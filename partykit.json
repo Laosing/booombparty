@@ -2,9 +2,13 @@
   "$schema": "https://www.partykit.io/schema.json",
   "name": "blitzparty",
   "main": "party/server.ts",
+  "parties": {
+    "lobby": "party/lobby.ts"
+  },
   "compatibilityDate": "2026-01-15",
   "serve": {
     "path": "public",
     "build": "app/client.tsx"
-  }
+  },
+  "port": 1999
 }
