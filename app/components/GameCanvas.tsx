@@ -101,7 +101,10 @@ function GameCanvasInner({
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (chatEndRef.current?.parentElement) {
+      chatEndRef.current.parentElement.scrollTop =
+        chatEndRef.current.parentElement.scrollHeight
+    }
   }, [chatMessages])
 
   const handleMessage = (
@@ -132,7 +135,7 @@ function GameCanvasInner({
     } else if (data.type === "CHAT_MESSAGE" && data.senderName && data.text) {
       setChatMessages((prev) =>
         [...prev, { senderName: data.senderName!, text: data.text! }].slice(
-          -50,
+          -200,
         ),
       )
     } else if (data.type === "TYPING_UPDATE" && data.text !== undefined) {
@@ -480,6 +483,7 @@ function GameCanvasInner({
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Message..."
               className="input input-sm input-bordered flex-1"
+              maxLength={100}
             />
             <button
               type="submit"
