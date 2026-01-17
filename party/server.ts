@@ -134,11 +134,20 @@ export default class Server implements Party.Server {
 
     // 2. Anti-Bot: Connection Throttling
     // Allow 1 connection every 2 seconds per IP
-    const lastAttempt = this.lastConnectionAttempts.get(ip)
-    if (lastAttempt && Date.now() - lastAttempt < 2000) {
-      console.log(`Rejected fast reconnect from IP: ${ip}`)
-      conn.close(4003, "Connection rate limited. Please wait.")
-      return
+    // EXEMPT LOCALHOST/UNKNOWN (for dev environment)
+    const isLocal =
+      ip === "127.0.0.1" ||
+      ip === "::1" ||
+      ip === "localhost" ||
+      ip === "unknown"
+
+    if (!isLocal) {
+      const lastAttempt = this.lastConnectionAttempts.get(ip)
+      if (lastAttempt && Date.now() - lastAttempt < 2000) {
+        console.log(`Rejected fast reconnect from IP: ${ip}`)
+        conn.close(4003, "Connection rate limited. Please wait.")
+        return
+      }
     }
     this.lastConnectionAttempts.set(ip, Date.now())
 
@@ -422,12 +431,19 @@ export default class Server implements Party.Server {
           break
 
         case "UPDATE_SETTINGS":
-          if (senderPlayer?.isAdmin && typeof data.startingLives === "number") {
-            // Basic validation
-            let lives = Math.floor(data.startingLives)
-            if (lives < 1) lives = 1
-            if (lives > 10) lives = 10
-            this.startingLives = lives
+          if (senderPlayer?.isAdmin) {
+            if (typeof data.startingLives === "number") {
+              let lives = Math.floor(data.startingLives)
+              if (lives < 1) lives = 1
+              if (lives > 10) lives = 10
+              this.startingLives = lives
+            }
+            if (typeof data.maxTimer === "number") {
+              let timer = Math.floor(data.maxTimer)
+              if (timer < 5) timer = 5
+              if (timer > 20) timer = 20
+              this.maxTimer = timer
+            }
             this.broadcastState()
           }
           break
@@ -643,6 +659,7 @@ export default class Server implements Party.Server {
         timer: this.timer,
         dictionaryLoaded: this.dictionaryReady,
         startingLives: this.startingLives,
+        maxTimer: this.maxTimer,
       }),
     )
   }

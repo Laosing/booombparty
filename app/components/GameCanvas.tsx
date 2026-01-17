@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import usePartySocket from "partysocket/react"
 import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
 import { generateAvatar } from "../utils/avatar"
+import { CopyIcon, SettingsIcon, EditIcon } from "./Icons"
 
 type Player = {
   id: string
@@ -27,6 +28,7 @@ type ServerMessage = {
   playerId?: string
   dictionaryLoaded?: boolean
   startingLives?: number
+  maxTimer?: number
 }
 
 function GameCanvasInner({
@@ -41,6 +43,7 @@ function GameCanvasInner({
   const [currentSyllable, setCurrentSyllable] = useState("")
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null)
   const [timer, setTimer] = useState(10)
+  const [maxTimer, setMaxTimer] = useState(10)
   const [startingLives, setStartingLives] = useState(2)
   const [logs, setLogs] = useState<string[]>([])
   const [input, setInput] = useState("")
@@ -64,12 +67,15 @@ function GameCanvasInner({
 
   const [dictionaryLoaded, setDictionaryLoaded] = useState(false)
 
+  // Use stable initial name to prevent socket reconnection on name change
+  const [initialName] = useState(myName)
+
   const socket = usePartySocket({
     room: room,
     // Add name to query
     query: {
       ...(password ? { password } : {}),
-      ...(myName ? { name: myName } : {}),
+      name: initialName,
     },
     onMessage(evt) {
       const data = JSON.parse(evt.data) as ServerMessage & {
@@ -96,6 +102,7 @@ function GameCanvasInner({
   >([])
   const [chatInput, setChatInput] = useState("")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -120,6 +127,7 @@ function GameCanvasInner({
       if (data.dictionaryLoaded !== undefined)
         setDictionaryLoaded(data.dictionaryLoaded)
       if (data.startingLives !== undefined) setStartingLives(data.startingLives)
+      if (data.maxTimer !== undefined) setMaxTimer(data.maxTimer)
     } else if (data.type === "ERROR") {
       addLog(`Error: ${data.message}`)
     } else if (data.type === "BONUS") {
@@ -171,7 +179,11 @@ function GameCanvasInner({
 
   const handleSettingsSave = () => {
     socket.send(
-      JSON.stringify({ type: "UPDATE_SETTINGS", startingLives: startingLives }),
+      JSON.stringify({
+        type: "UPDATE_SETTINGS",
+        startingLives: startingLives,
+        maxTimer: maxTimer,
+      }),
     )
     setIsSettingsOpen(false)
   }
@@ -217,6 +229,42 @@ function GameCanvasInner({
 
   return (
     <div className="container mx-auto p-4 flex flex-col gap-6 max-w-4xl">
+      {/* Name Modal */}
+      {isNameModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="card bg-base-100 w-96 shadow-xl p-6">
+            <h3 className="text-xl font-bold mb-4">Change Name</h3>
+            <div className="flex flex-col gap-4">
+              <input
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Enter your name"
+                className="input input-bordered w-full text-center"
+                maxLength={16}
+              />
+              <div className="flex gap-2 justify-end">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setIsNameModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleNameChange()
+                    setIsNameModalOpen(false)
+                  }}
+                  disabled={isNameDisabled}
+                  className="btn btn-primary"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Settings Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -239,6 +287,24 @@ function GameCanvasInner({
               <label className="label">
                 <span className="label-text-alt opacity-70">
                   Value between 1 and 10
+                </span>
+              </label>
+            </div>
+            <div className="form-control w-full max-w-xs mb-6">
+              <label className="label">
+                <span className="label-text">Timer (Seconds)</span>
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="20"
+                value={maxTimer}
+                onChange={(e) => setMaxTimer(parseInt(e.target.value) || 10)}
+                className="input input-bordered w-full max-w-xs"
+              />
+              <label className="label">
+                <span className="label-text-alt opacity-70">
+                  Value between 5 and 20
                 </span>
               </label>
             </div>
@@ -274,8 +340,9 @@ function GameCanvasInner({
               <button
                 className="btn btn-ghost btn-sm btn-circle"
                 onClick={() => setIsSettingsOpen(true)}
+                title="Settings"
               >
-                ⚙️
+                <SettingsIcon />
               </button>
             )}
           </div>
@@ -283,38 +350,30 @@ function GameCanvasInner({
 
         <div className="text-sm opacity-70 mb-4">
           Room:{" "}
-          <strong className="font-mono text-lg badge badge-neutral tracking-widest">
+          <button
+            className="font-mono text-lg badge badge-neutral tracking-widest hover:badge-primary transition-colors cursor-pointer gap-2"
+            onClick={() => navigator.clipboard.writeText(window.location.href)}
+            title="Copy room link"
+          >
             {room.toUpperCase()}
-          </strong>
-          {password && " 🔒"}
+            <CopyIcon />
+            {password && " 🔒"}
+          </button>
         </div>
 
         {gameState === "LOBBY" && (
           <div className="flex flex-col gap-4 items-center">
             <p className="text-lg">
-              Welcome! BlitzParty is a fast-paced multiplayer "hot potato"
-              typing game. Players take turns forming words containing a
-              specific substring of letters before a bomb explodes.
+              Welcome to BlitzParty! Type a word containing the letters before
+              time runs out!
             </p>
-            <div className="badge badge-lg badge-neutral gap-2">
-              Lives: {startingLives} ❤
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-2 items-center w-full justify-center">
-              <input
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="Enter your name"
-                className="input input-bordered w-full max-w-xs text-center"
-                maxLength={16}
-              />
-              <button
-                onClick={handleNameChange}
-                disabled={isNameDisabled}
-                className="btn btn-neutral"
-              >
-                {isNameDisabled ? "Wait..." : "Set Name"}
-              </button>
+              <div className="badge badge-lg badge-neutral gap-2">
+                Lives: {startingLives}
+              </div>
+              <div className="badge badge-lg badge-neutral gap-2">
+                Timer: {maxTimer}s
+              </div>
             </div>
 
             {isAmAdmin ? (
@@ -423,7 +482,7 @@ function GameCanvasInner({
             <div className="flex flex-col items-center gap-2">
               <div className="avatar indicator">
                 {p.isAdmin && (
-                  <span className="indicator-item indicator-center badge badge-warning badge-sm">
+                  <span className="indicator-item indicator-center badge badge-warning badge-sm -translate-y-6 -translate-x-7">
                     Admin
                   </span>
                 )}
@@ -440,7 +499,16 @@ function GameCanvasInner({
                 <h3 className="font-bold flex items-center gap-1 justify-center">
                   {p.name}{" "}
                   {p.id === socket.id && (
-                    <span className="badge badge-xs badge-primary">You</span>
+                    <>
+                      <span className="badge badge-xs badge-primary">You</span>
+                      <button
+                        onClick={() => setIsNameModalOpen(true)}
+                        className="btn btn-ghost btn-sm btn-circle"
+                        title="Edit Name"
+                      >
+                        <EditIcon />
+                      </button>
+                    </>
                   )}
                 </h3>
                 <div className="flex gap-1 justify-center text-error mt-1 text-sm">
