@@ -1,6 +1,6 @@
 import initSqlJs from "sql.js"
 import sqlWasm from "./sql-wasm.wasm"
-import { createLogger } from "./logger"
+import { createLogger } from "../shared/logger"
 
 const logger = createLogger("Dictionary")
 

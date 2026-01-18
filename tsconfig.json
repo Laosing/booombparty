@@ -24,6 +24,6 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"],
+  "include": ["app", "party", "shared"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

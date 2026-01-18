@@ -32,19 +32,24 @@ const themes = [
   "winter",
 ]
 
-export default function ThemeController() {
-  const [theme, setTheme] = useState("dark")
-
+export default function ThemeController({
+  theme,
+  setTheme,
+}: {
+  theme: string
+  setTheme: (t: string) => void
+}) {
   useEffect(() => {
-    // Load saved theme
+    // Load saved theme on mount
     const saved = localStorage.getItem("blitzparty_theme")
     if (saved) {
       setTheme(saved)
       document.documentElement.setAttribute("data-theme", saved)
     } else {
       document.documentElement.setAttribute("data-theme", "dark")
+      setTheme("dark")
     }
-  }, [])
+  }, [setTheme])
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value

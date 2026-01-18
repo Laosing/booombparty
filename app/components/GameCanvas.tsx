@@ -3,6 +3,7 @@ import usePartySocket from "partysocket/react"
 import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
 import { generateAvatar } from "../utils/avatar"
 import { CopyIcon, SettingsIcon, EditIcon } from "./Icons"
+import { Logo } from "./Logo"
 
 type Player = {
   id: string
@@ -149,7 +150,7 @@ function GameCanvasInner({
             text: data.text!,
             timestamp: Date.now(),
           },
-        ].slice(-200),
+        ].slice(-100),
       )
     } else if (data.type === "TYPING_UPDATE" && data.text !== undefined) {
       if (data.playerId !== socket.id) {
@@ -331,10 +332,7 @@ function GameCanvasInner({
           >
             ← Lobby
           </button>
-          <h1 className="text-3xl font-black text-primary flex items-center gap-2">
-            <img src="/favicon.svg" alt="Logo" width="48" height="48" />{" "}
-            BlitzParty
-          </h1>
+          <Logo name={room} />
           <div className="w-16 flex justify-end">
             {gameState === "LOBBY" && isAmAdmin && (
               <button
@@ -351,7 +349,7 @@ function GameCanvasInner({
         <div className="text-sm opacity-70 mb-4">
           Room:{" "}
           <button
-            className="font-mono text-lg badge badge-neutral tracking-widest hover:badge-primary transition-colors cursor-pointer gap-2"
+            className="font-mono text-lg badge badge-neutral tracking-widest hover:badge-primary transition-colors cursor-pointer gap-2 font-bold"
             onClick={() => navigator.clipboard.writeText(window.location.href)}
             title="Copy room link"
           >
@@ -482,7 +480,7 @@ function GameCanvasInner({
             <div className="flex flex-col items-center gap-2">
               <div className="avatar indicator">
                 {p.isAdmin && (
-                  <span className="indicator-item indicator-center badge badge-warning badge-sm -translate-y-6 -translate-x-7">
+                  <span className="indicator-item indicator-center badge badge-warning badge-sm">
                     Admin
                   </span>
                 )}

@@ -1,6 +1,6 @@
 import type * as Party from "partykit/server"
 import { DictionaryManager } from "./dictionary"
-import { createLogger, Logger } from "./logger"
+import { createLogger, Logger } from "../shared/logger"
 
 type Player = {
   id: string

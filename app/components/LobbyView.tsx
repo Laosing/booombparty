@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import usePartySocket from "partysocket/react"
+import { Logo } from "./Logo"
 
 export default function LobbyView() {
   const [availableRooms, setAvailableRooms] = useState<
@@ -51,10 +52,7 @@ export default function LobbyView() {
   return (
     <div className="container mx-auto p-4 flex flex-col gap-8 max-w-4xl relative">
       <div className="card bg-base-100 shadow-xl p-8 text-center border border-base-300">
-        <h1 className="text-4xl font-bold text-primary flex items-center justify-center gap-4 mb-4">
-          <img src="/favicon.svg" alt="Logo" width="48" height="48" />
-          BlitzParty
-        </h1>
+        <Logo random />
         <p className="opacity-70">Choose a room to join or create a new one.</p>
 
         {errorMsg && (
@@ -73,7 +71,7 @@ export default function LobbyView() {
           onSubmit={handleCreate}
           className="my-8 flex flex-col sm:flex-row gap-4 items-center justify-center"
         >
-          <div className="flex flex-col gap-1 w-full max-w-xs">
+          <div className="flex flex-col gap-1 w-full max-w-xs relative">
             <input
               value={newRoomName}
               onChange={(e) => {
@@ -85,7 +83,9 @@ export default function LobbyView() {
               maxLength={4}
             />
             {newRoomName.length > 0 && newRoomName.length < 4 && (
-              <span className="text-xs text-error">Must be 4 letters</span>
+              <span className="text-xs text-error absolute -bottom-5 left-0 right-0">
+                Must be 4 letters
+              </span>
             )}
           </div>
           <input
