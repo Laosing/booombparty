@@ -42,6 +42,8 @@ export default class Server implements Party.Server {
   maxTimer: number = 10
   startingLives: number = 2
   chatEnabled: boolean = true
+  syllableChangeThreshold: number = 2
+  syllableTurnCount: number = 0
 
   tickInterval: ReturnType<typeof setTimeout> | null = null
   nextTickTime: number = 0
@@ -497,6 +499,17 @@ export default class Server implements Party.Server {
             }
             if (typeof data.chatEnabled === "boolean") {
               this.chatEnabled = data.chatEnabled
+              this.broadcast({
+                type: ServerMessageType.SYSTEM_MESSAGE,
+                message: this.chatEnabled ? "Chat enabled" : "Chat disabled",
+              })
+            }
+            if (typeof data.syllableChangeThreshold === "number") {
+              // Clamp between 1 and 5
+              this.syllableChangeThreshold = Math.max(
+                1,
+                Math.min(5, data.syllableChangeThreshold),
+              )
             }
             this.broadcastState()
           }
@@ -552,6 +565,7 @@ export default class Server implements Party.Server {
     this.gameState = GameState.PLAYING
     this.usedWords.clear()
     this.initialAliveCount = this.players.size
+    this.syllableTurnCount = 0
 
     for (const p of this.players.values()) {
       p.lives = this.startingLives
@@ -658,7 +672,12 @@ export default class Server implements Party.Server {
     // Async generation?
     // getRandomSyllable is synchronous in interface but we might want to ensure loading?
     // For now, it returns "ING" if not loaded.
-    this.currentSyllable = this.dictionary.getRandomSyllable(50)
+    this.syllableTurnCount++
+    if (isFirst || this.syllableTurnCount >= this.syllableChangeThreshold) {
+      this.currentSyllable = this.dictionary.getRandomSyllable(50)
+      this.syllableTurnCount = 0
+    }
+
     this.timer = this.maxTimer
     this.turnStartTime = Date.now()
 

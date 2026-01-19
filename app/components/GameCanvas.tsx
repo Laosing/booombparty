@@ -35,6 +35,7 @@ type ServerMessage = {
   maxTimer?: number
   chatEnabled?: boolean
   hide?: boolean
+  syllableChangeThreshold?: number
 }
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz"
@@ -74,6 +75,7 @@ function GameCanvasInner({
   const [timer, setTimer] = useState(10)
   const [maxTimer, setMaxTimer] = useState(10)
   const [startingLives, setStartingLives] = useState(2)
+  const [syllableChangeThreshold, setSyllableChangeThreshold] = useState(2)
   const [logs, setLogs] = useState<{ message: string; timestamp: number }[]>([])
   const [input, setInput] = useState("")
   const [activePlayerInput, setActivePlayerInput] = useState("")
@@ -175,6 +177,8 @@ function GameCanvasInner({
       if (data.startingLives !== undefined) setStartingLives(data.startingLives)
       if (data.maxTimer !== undefined) setMaxTimer(data.maxTimer)
       if (data.chatEnabled !== undefined) setChatEnabled(data.chatEnabled)
+      if (data.syllableChangeThreshold !== undefined)
+        setSyllableChangeThreshold(data.syllableChangeThreshold)
     } else if (data.type === ServerMessageType.ERROR) {
       if (!data.hide) {
         addLog(`Error: ${data.message}`)
@@ -186,7 +190,7 @@ function GameCanvasInner({
     } else if (data.type === ServerMessageType.EXPLOSION) {
       const pName =
         players.find((p) => p.id === data.playerId)?.name || "Unknown"
-      addLog(`BOOM! Player: ${pName} exploded!`)
+      addLog(`BOOM! Player: ${pName} lost a life!`)
     } else if (data.type === ServerMessageType.SYSTEM_MESSAGE) {
       addLog(`${data.message}`)
     } else if (data.type === ServerMessageType.GAME_OVER) {
@@ -247,9 +251,10 @@ function GameCanvasInner({
     socket.send(
       JSON.stringify({
         type: ClientMessageType.UPDATE_SETTINGS,
-        startingLives: startingLives,
-        maxTimer: maxTimer,
-        chatEnabled: chatEnabled,
+        startingLives,
+        maxTimer,
+        chatEnabled,
+        syllableChangeThreshold,
       }),
     )
     setIsSettingsOpen(false)
@@ -382,6 +387,28 @@ function GameCanvasInner({
                 </span>
               </label>
             </div>
+            <div className="form-control w-full max-w-xs mb-6">
+              <label className="label">
+                <span className="label-text">
+                  Change syllable after X turns
+                </span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                value={syllableChangeThreshold}
+                onChange={(e) =>
+                  setSyllableChangeThreshold(parseInt(e.target.value) || 1)
+                }
+                className="input input-bordered w-full max-w-xs"
+              />
+              <label className="label">
+                <span className="label-text-alt opacity-70">
+                  Value between 1 and 5
+                </span>
+              </label>
+            </div>
 
             <div className="form-control w-full max-w-xs mb-6 px-1">
               <label className="label cursor-pointer justify-start gap-4">
@@ -456,6 +483,9 @@ function GameCanvasInner({
               </div>
               <div className="badge badge-lg badge-neutral gap-2">
                 Timer: {maxTimer}s
+              </div>
+              <div className="badge badge-lg badge-neutral gap-2">
+                Change syllable after: {syllableChangeThreshold} turns
               </div>
             </div>
 

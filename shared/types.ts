@@ -39,5 +39,6 @@ export type ClientMessage =
       startingLives?: number
       maxTimer?: number
       chatEnabled?: boolean
+      syllableChangeThreshold?: number
     }
   | { type: ClientMessageType.KICK_PLAYER; playerId: string }
