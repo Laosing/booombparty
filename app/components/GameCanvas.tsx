@@ -17,6 +17,7 @@ type Player = {
   wins: number
   usedLetters: string[]
   isAdmin?: boolean
+  lastTurn?: { word: string; syllable: string }
 }
 
 type ServerMessage = {
@@ -37,6 +38,27 @@ type ServerMessage = {
 }
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+
+function WordHighlight({
+  word,
+  highlight,
+}: {
+  word: string
+  highlight: string
+}) {
+  const index = word.toLowerCase().indexOf(highlight.toLowerCase())
+  if (index === -1) return <>{word}</>
+
+  return (
+    <>
+      {word.slice(0, index)}
+      <span className="text-primary font-bold">
+        {word.slice(index, index + highlight.length)}
+      </span>
+      {word.slice(index + highlight.length)}
+    </>
+  )
+}
 
 function GameCanvasInner({
   room,
@@ -596,6 +618,16 @@ function GameCanvasInner({
                 <div className="text-xs opacity-60 mt-1">
                   Wins: {p.wins || 0}
                 </div>
+                {p.lastTurn && (
+                  <div className="text-xs opacity-60 mt-1">
+                    <span className="text-base-content/80 font-medium">
+                      <WordHighlight
+                        word={p.lastTurn.word}
+                        highlight={p.lastTurn.syllable}
+                      />
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

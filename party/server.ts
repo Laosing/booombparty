@@ -11,6 +11,7 @@ type Player = {
   usedLetters: string[]
   isAdmin: boolean
   clientId?: string
+  lastTurn?: { word: string; syllable: string }
 }
 
 import {
@@ -612,6 +613,7 @@ export default class Server implements Party.Server {
     const p = this.players.get(this.activePlayerId)
     if (p) {
       p.lives -= 1
+      p.lastTurn = undefined // Clear last turn on failure
       if (p.lives <= 0) {
         p.isAlive = false
       }
@@ -665,16 +667,17 @@ export default class Server implements Party.Server {
 
   handleWordSubmission(playerId: string, rawWord: string) {
     // Anti-Bot: Reaction Time Check
-    // If the submission is impossibly fast (< 300ms) after turn start, ignore or reject.
+    // If the submission is impossibly fast (< 50ms) after turn start, ignore or reject.
     const reactionTime = Date.now() - this.turnStartTime
-    if (reactionTime < 300) {
+    if (reactionTime < 50) {
       this.logger.warn(
         `Rejected implausible reaction time: ${reactionTime}ms by ${playerId}`,
       )
       // Silent ignore or error
+      const p = this.players.get(playerId)
       this.sendTo(playerId, {
         type: ServerMessageType.ERROR,
-        message: "Too fast! Are you a bot?",
+        message: `Too fast, ${p?.name || "Player"}! Are you a bot?`,
       })
       return
     }
@@ -695,6 +698,7 @@ export default class Server implements Party.Server {
 
       const p = this.players.get(playerId)
       if (p) {
+        p.lastTurn = { word, syllable: this.currentSyllable } // Store last turn
         for (const char of word.toUpperCase()) {
           if (char >= "A" && char <= "Z" && !p.usedLetters.includes(char)) {
             p.usedLetters.push(char)
