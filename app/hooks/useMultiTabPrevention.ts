@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 
-const CHANNEL_NAME = "blitzparty_session"
+const CHANNEL_NAME = "booombparty_session"
 const PING_MESSAGE = "PING_ACTIVE_SESSION"
 const PONG_MESSAGE = "PONG_ACTIVE_SESSION"
 

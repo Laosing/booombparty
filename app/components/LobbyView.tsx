@@ -20,6 +20,7 @@ export default function LobbyView() {
       setErrorMsg("You were disconnected due to inactivity.")
     if (err === "kicked")
       setErrorMsg("You were kicked from the room by the admin.")
+    if (err === "banned") setErrorMsg("You are banned from this room.")
 
     // Clean URL
     if (err) {

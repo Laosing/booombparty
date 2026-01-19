@@ -33,6 +33,7 @@ type ServerMessage = {
   startingLives?: number
   maxTimer?: number
   chatEnabled?: boolean
+  hide?: boolean
 }
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz"
@@ -58,7 +59,7 @@ function GameCanvasInner({
   // Persistent name state (committed)
   const [myName, setMyName] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("blitzparty_username") || ""
+      return localStorage.getItem("booombparty_username") || ""
     }
     return ""
   })
@@ -76,12 +77,24 @@ function GameCanvasInner({
   // Use stable initial name to prevent socket reconnection on name change
   const [initialName] = useState(myName)
 
+  // Persistent Client ID
+  const [clientId] = useState(() => {
+    if (typeof window === "undefined") return "server"
+    let id = localStorage.getItem("booombparty_client_id")
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem("booombparty_client_id", id)
+    }
+    return id
+  })
+
   const socket = usePartySocket({
     room: room,
     // Add name to query
     query: {
       ...(password ? { password } : {}),
       name: initialName,
+      clientId,
     },
     onMessage(evt) {
       const data = JSON.parse(evt.data) as ServerMessage & {
@@ -99,6 +112,9 @@ function GameCanvasInner({
       }
       if (evt.code === 4002) {
         window.location.href = "/?error=kicked"
+      }
+      if (evt.code === 4003) {
+        window.location.href = "/?error=banned"
       }
     },
   })
@@ -138,7 +154,9 @@ function GameCanvasInner({
       if (data.maxTimer !== undefined) setMaxTimer(data.maxTimer)
       if (data.chatEnabled !== undefined) setChatEnabled(data.chatEnabled)
     } else if (data.type === ServerMessageType.ERROR) {
-      addLog(`Error: ${data.message}`)
+      if (!data.hide) {
+        addLog(`Error: ${data.message}`)
+      }
       setTempError(data.message || "Error")
       setTimeout(() => setTempError(null), 500)
     } else if (data.type === ServerMessageType.BONUS) {
@@ -241,7 +259,7 @@ function GameCanvasInner({
     const trimmedName = nameInput.trim()
     if (!trimmedName) return
     setMyName(trimmedName) // Commit the new name
-    localStorage.setItem("blitzparty_username", trimmedName)
+    localStorage.setItem("booombparty_username", trimmedName)
     socket.send(
       JSON.stringify({ type: ClientMessageType.SET_NAME, name: trimmedName }),
     )
@@ -407,7 +425,7 @@ function GameCanvasInner({
         {gameState === GameState.LOBBY && (
           <div className="flex flex-col gap-4 items-center">
             <p className="text-lg">
-              Welcome to BlitzParty! Type a word containing the letters before
+              Welcome to booombparty! Type a word containing the letters before
               time runs out!
             </p>
             <div className="flex flex-col sm:flex-row gap-2 items-center w-full justify-center">

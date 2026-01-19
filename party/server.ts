@@ -10,12 +10,14 @@ type Player = {
   wins: number
   usedLetters: string[]
   isAdmin: boolean
+  clientId?: string
 }
 
 import {
   ClientMessageType,
   ServerMessageType,
   GameState,
+  type ClientMessage,
 } from "../shared/types"
 
 export default class Server implements Party.Server {
@@ -40,7 +42,8 @@ export default class Server implements Party.Server {
   startingLives: number = 2
   chatEnabled: boolean = true
 
-  tickInterval: ReturnType<typeof setInterval> | null = null
+  tickInterval: ReturnType<typeof setTimeout> | null = null
+  nextTickTime: number = 0
 
   dictionaryReady: boolean = false
 
@@ -54,6 +57,7 @@ export default class Server implements Party.Server {
   // Blocking logic
   blockedIPs: Set<string> = new Set()
   connectionIPs: Map<string, string> = new Map()
+  connectionClientIds: Map<string, string> = new Map()
 
   // Inactivity tracking
   lastActivity: number = Date.now()
@@ -160,9 +164,19 @@ export default class Server implements Party.Server {
     }
     this.lastConnectionAttempts.set(ip, Date.now())
 
+    const url = new URL(ctx.request.url)
+    const clientId = url.searchParams.get("clientId") || undefined
+    if (clientId) this.connectionClientIds.set(conn.id, clientId)
+
     // 2. Check if blocked
-    if (this.blockedIPs.has(ip)) {
-      this.logger.warn(`Rejected blocked IP: ${ip}`)
+    if (
+      this.blockedIPs.has(ip) ||
+      this.blockedIPs.has(conn.id) ||
+      (clientId && this.blockedIPs.has(clientId))
+    ) {
+      this.logger.warn(
+        `Rejected blocked Client: ${ip} / ${conn.id} / ${clientId}`,
+      )
       conn.close(4003, "You are banned from this room.")
       return
     }
@@ -172,7 +186,7 @@ export default class Server implements Party.Server {
     this.lastActivity = Date.now()
 
     // Initialize dictionary if needed (lazy load)
-    const url = new URL(ctx.request.url)
+    // const url = new URL(ctx.request.url) // Removed duplicate declaration
     // NOTE: In production (PartyKit), the origin might be the partykit.dev URL.
     // However, static assets are served from the same domain by PartyKit if configured correctly.
     // If client is separate (Vite deploy), we might need the client origin.
@@ -230,45 +244,58 @@ export default class Server implements Party.Server {
       wins: 0,
       usedLetters: [],
       isAdmin,
+      clientId,
     })
 
     this.logger.info(
       `Player Connected: ${name} (${conn.id}) [IP: ${isLocal ? "Localhost" : ip}]`,
     )
 
+    this.broadcast({
+      type: ServerMessageType.SYSTEM_MESSAGE,
+      message: `${name} joined the game!`,
+    })
+
     this.broadcastState()
     this.reportToLobby()
   }
 
   onClose(conn: Party.Connection) {
-    const p = this.players.get(conn.id)
-    this.logger.info(
-      `Player Disconnected: ${p ? p.name : "Unknown"} (${conn.id})`,
-    )
+    this.removePlayer(conn.id)
+  }
 
-    this.connectionIPs.delete(conn.id)
+  removePlayer(connectionId: string) {
+    const p = this.players.get(connectionId)
+    if (!p) return
 
-    const wasAdmin = this.players.get(conn.id)?.isAdmin
+    this.logger.info(`Player Disconnected: ${p.name} (${connectionId})`)
+
+    this.connectionIPs.delete(connectionId)
+
+    const wasAdmin = p.isAdmin
 
     // Determine next player if active player is leaving
     let forceNextId: string | undefined
-    if (this.gameState === "PLAYING" && conn.id === this.activePlayerId) {
+    if (
+      this.gameState === GameState.PLAYING &&
+      connectionId === this.activePlayerId
+    ) {
       const playerIds = Array.from(this.players.values())
         .filter((p) => p.isAlive)
         .map((p) => p.id)
-      const idx = playerIds.indexOf(conn.id)
+      const idx = playerIds.indexOf(connectionId)
       if (idx !== -1) {
         // Pick next in ring
         const nextIdx = (idx + 1) % playerIds.length
-        if (playerIds[nextIdx] !== conn.id) {
+        if (playerIds[nextIdx] !== connectionId) {
           forceNextId = playerIds[nextIdx]
         }
       }
     }
 
-    this.players.delete(conn.id)
-    this.messageCounts.delete(conn.id)
-    this.rateLimits.delete(conn.id)
+    this.players.delete(connectionId)
+    this.messageCounts.delete(connectionId)
+    this.rateLimits.delete(connectionId)
 
     // Reassign admin if necessary
     if (wasAdmin && this.players.size > 0) {
@@ -282,7 +309,7 @@ export default class Server implements Party.Server {
     this.checkWinCondition() // Check if game should end due to lack of players
 
     if (this.gameState === GameState.PLAYING) {
-      if (conn.id === this.activePlayerId) {
+      if (connectionId === this.activePlayerId) {
         // If the active player left, immediately pass turn to next
         this.nextTurn(false, forceNextId)
       }
@@ -345,7 +372,7 @@ export default class Server implements Party.Server {
     }
 
     try {
-      const data = JSON.parse(message)
+      const data = JSON.parse(message) as ClientMessage
       const senderPlayer = this.players.get(sender.id)
 
       switch (data.type) {
@@ -481,12 +508,30 @@ export default class Server implements Party.Server {
 
             const targetConn = this.room.getConnection(data.playerId)
             if (targetConn) {
+              const targetPlayer = this.players.get(data.playerId)
+              const targetName = targetPlayer ? targetPlayer.name : "Unknown"
+
+              this.broadcast({
+                type: ServerMessageType.SYSTEM_MESSAGE,
+                message: `${targetName} was kicked by the host.`,
+              })
+
               // BLOCK THE ID
+              this.blockedIPs.add(data.playerId)
               const ip = this.connectionIPs.get(data.playerId)
-              if (ip && ip !== "unknown") {
+              if (ip) {
                 this.blockedIPs.add(ip)
-                this.logger.warn(`Blocked IP ${ip} for player ${data.playerId}`)
               }
+              const clientId = this.connectionClientIds.get(data.playerId)
+              if (clientId) {
+                this.blockedIPs.add(clientId)
+              }
+              this.logger.warn(
+                `Blocked Player: ${data.playerId} (IP: ${ip}, ClientID: ${clientId})`,
+              )
+
+              // Remove player immediately from state so UI updates instantly
+              this.removePlayer(data.playerId)
               targetConn.close(4002, "Kicked by Admin")
             }
           }
@@ -523,10 +568,29 @@ export default class Server implements Party.Server {
   }
 
   startLoop() {
-    if (this.tickInterval) clearInterval(this.tickInterval)
-    this.tickInterval = setInterval(() => {
-      this.tick()
-    }, 1000)
+    if (this.tickInterval) clearTimeout(this.tickInterval)
+    this.nextTickTime = Date.now() + 1000
+    this.tickInterval = setTimeout(() => this.loopStep(), 1000)
+  }
+
+  loopStep() {
+    if (this.gameState !== GameState.PLAYING) return
+
+    const now = Date.now()
+    // Calculate drift (if we are late, this is positive)
+    const drift = now - this.nextTickTime
+
+    // If massive drift (e.g. suspended), reset
+    if (drift > 1000) {
+      this.nextTickTime = now
+    }
+
+    this.tick()
+
+    // Schedule next tick
+    this.nextTickTime += 1000
+    const delay = Math.max(0, this.nextTickTime - Date.now())
+    this.tickInterval = setTimeout(() => this.loopStep(), delay)
   }
 
   tick() {
@@ -620,6 +684,7 @@ export default class Server implements Party.Server {
       this.broadcast({
         type: ServerMessageType.ERROR,
         message: "Word already used!",
+        hide: true,
       })
       return
     }
@@ -650,6 +715,7 @@ export default class Server implements Party.Server {
       this.broadcast({
         type: ServerMessageType.ERROR,
         message: check.reason,
+        hide: true,
       })
     }
   }
@@ -669,7 +735,7 @@ export default class Server implements Party.Server {
 
   endGame(winnerId?: string | null) {
     this.gameState = GameState.ENDED
-    if (this.tickInterval) clearInterval(this.tickInterval)
+    if (this.tickInterval) clearTimeout(this.tickInterval)
     this.broadcast({ type: ServerMessageType.GAME_OVER, winnerId })
 
     if (winnerId) {

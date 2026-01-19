@@ -41,7 +41,7 @@ export default function ThemeController({
 }) {
   useEffect(() => {
     // Load saved theme on mount
-    const saved = localStorage.getItem("blitzparty_theme")
+    const saved = localStorage.getItem("booombparty_theme")
     if (saved) {
       setTheme(saved)
       document.documentElement.setAttribute("data-theme", saved)
@@ -54,7 +54,7 @@ export default function ThemeController({
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value
     setTheme(val)
-    localStorage.setItem("blitzparty_theme", val)
+    localStorage.setItem("booombparty_theme", val)
     document.documentElement.setAttribute("data-theme", val)
   }
 

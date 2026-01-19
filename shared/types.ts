@@ -26,3 +26,18 @@ export enum GameState {
   PLAYING = "PLAYING",
   ENDED = "ENDED",
 }
+
+export type ClientMessage =
+  | { type: ClientMessageType.START_GAME }
+  | { type: ClientMessageType.STOP_GAME }
+  | { type: ClientMessageType.SUBMIT_WORD; word: string }
+  | { type: ClientMessageType.UPDATE_TYPING; text: string }
+  | { type: ClientMessageType.SET_NAME; name: string }
+  | { type: ClientMessageType.CHAT_MESSAGE; text: string }
+  | {
+      type: ClientMessageType.UPDATE_SETTINGS
+      startingLives?: number
+      maxTimer?: number
+      chatEnabled?: boolean
+    }
+  | { type: ClientMessageType.KICK_PLAYER; playerId: string }

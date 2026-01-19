@@ -1,4 +1,4 @@
-# 🎈 blitzparty
+# 🎈 booombparty
 
 Welcome to the party, pal!
 

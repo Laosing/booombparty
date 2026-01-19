@@ -16,7 +16,7 @@ export const Logo = ({ name, random }: { name?: string; random?: boolean }) => {
   return (
     <div className="flex items-center justify-center gap-4">
       {displayName ? <CustomAvatar name={displayName} /> : <LogoIcon />}
-      <h1 className="text-4xl font-bold text-primary">BlitzParty</h1>
+      <h1 className="text-4xl font-bold text-primary">booombparty</h1>
     </div>
   )
 }
