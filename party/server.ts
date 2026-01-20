@@ -91,14 +91,15 @@ export default class Server implements Party.Server {
     // Heartbeat & Inactivity Check
     this.keepAliveInterval = setInterval(() => {
       this.checkInactivity()
+      this.reportToLobby()
     }, 10000)
   }
 
   checkInactivity() {
     if (this.players.size === 0) return
 
-    // 5 minutes timeout
-    const TIMEOUT = 5 * 60 * 1000
+    // 3 minutes timeout
+    const TIMEOUT = 3 * 60 * 1000
     if (Date.now() - this.lastActivity > TIMEOUT) {
       for (const conn of this.room.getConnections()) {
         conn.close(4001, "Inactivity")
