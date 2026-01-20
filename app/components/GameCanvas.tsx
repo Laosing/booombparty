@@ -3,6 +3,7 @@ import usePartySocket from "partysocket/react"
 import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
 import { CopyIcon, SettingsIcon, EditIcon } from "./Icons"
 import { CustomAvatar, Logo } from "./Logo"
+import { Modal } from "./Modal"
 import {
   ClientMessageType,
   ServerMessageType,
@@ -148,8 +149,7 @@ function GameCanvasInner({
   >([])
   const [chatInput, setChatInput] = useState("")
   const [chatEnabled, setChatEnabled] = useState(true)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isNameModalOpen, setIsNameModalOpen] = useState(false)
+
   const [tempError, setTempError] = useState<string | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -257,7 +257,7 @@ function GameCanvasInner({
         syllableChangeThreshold,
       }),
     )
-    setIsSettingsOpen(false)
+    ;(document.getElementById("settings_modal") as HTMLDialogElement)?.close()
   }
 
   const handleKick = (playerId: string) => {
@@ -309,133 +309,124 @@ function GameCanvasInner({
   return (
     <div className="container mx-auto p-4 flex flex-col gap-6 max-w-4xl">
       {/* Name Modal */}
-      {isNameModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="card bg-base-100 w-96 shadow-xl p-6">
-            <h3 className="text-xl font-bold mb-4">Change Name</h3>
-            <div className="flex flex-col gap-4">
-              <input
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="Enter your name"
-                className="input input-bordered w-full text-center"
-                maxLength={16}
-              />
-              <div className="flex gap-2 justify-end">
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => setIsNameModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    handleNameChange()
-                    setIsNameModalOpen(false)
-                  }}
-                  disabled={isNameDisabled || !nameInput.trim()}
-                  className="btn btn-primary"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
+      <Modal
+        id="name_modal"
+        title="Change Name"
+        actions={
+          <>
+            <form method="dialog">
+              <button className="btn btn-ghost">Cancel</button>
+            </form>
+            <button
+              onClick={() => {
+                handleNameChange()
+                ;(
+                  document.getElementById("name_modal") as HTMLDialogElement
+                )?.close()
+              }}
+              disabled={isNameDisabled || !nameInput.trim()}
+              className="btn btn-primary"
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <input
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            placeholder="Enter your name"
+            className="input input-bordered w-full text-center"
+            maxLength={16}
+          />
         </div>
-      )}
+      </Modal>
 
       {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="card bg-base-100 w-96 shadow-xl p-6">
-            <h3 className="text-xl font-bold mb-4">Game Settings</h3>
-            <div className="form-control w-full max-w-xs mb-6">
-              <label className="label">
-                <span className="label-text">Starting Lives</span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={startingLives}
-                onChange={(e) =>
-                  setStartingLives(parseInt(e.target.value) || 2)
-                }
-                className="input input-bordered w-full max-w-xs"
-              />
-              <label className="label">
-                <span className="label-text-alt opacity-70">
-                  Value between 1 and 10
-                </span>
-              </label>
-            </div>
-            <div className="form-control w-full max-w-xs mb-6">
-              <label className="label">
-                <span className="label-text">Timer (Seconds)</span>
-              </label>
-              <input
-                type="number"
-                min="5"
-                max="20"
-                value={maxTimer}
-                onChange={(e) => setMaxTimer(parseInt(e.target.value) || 10)}
-                className="input input-bordered w-full max-w-xs"
-              />
-              <label className="label">
-                <span className="label-text-alt opacity-70">
-                  Value between 5 and 20
-                </span>
-              </label>
-            </div>
-            <div className="form-control w-full max-w-xs mb-6">
-              <label className="label">
-                <span className="label-text">
-                  Change syllable after X turns
-                </span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={syllableChangeThreshold}
-                onChange={(e) =>
-                  setSyllableChangeThreshold(parseInt(e.target.value) || 1)
-                }
-                className="input input-bordered w-full max-w-xs"
-              />
-              <label className="label">
-                <span className="label-text-alt opacity-70">
-                  Value between 1 and 5
-                </span>
-              </label>
-            </div>
-
-            <div className="form-control w-full max-w-xs mb-6 px-1">
-              <label className="label cursor-pointer justify-start gap-4">
-                <span className="label-text font-bold">Enable Chat</span>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-primary"
-                  checked={chatEnabled}
-                  onChange={(e) => setChatEnabled(e.target.checked)}
-                />
-              </label>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="btn btn-ghost"
-                onClick={() => setIsSettingsOpen(false)}
-              >
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSettingsSave}>
-                Save & Apply
-              </button>
-            </div>
-          </div>
+      <Modal
+        id="settings_modal"
+        title="Game Settings"
+        actions={
+          <>
+            <form method="dialog">
+              <button className="btn btn-ghost">Cancel</button>
+            </form>
+            <button className="btn btn-primary" onClick={handleSettingsSave}>
+              Save & Apply
+            </button>
+          </>
+        }
+      >
+        <div className="form-control w-full max-w-xs mb-6">
+          <label className="label">
+            <span className="label-text">Starting Lives</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="10"
+            value={startingLives}
+            onChange={(e) => setStartingLives(parseInt(e.target.value) || 2)}
+            className="input input-bordered w-full max-w-xs"
+          />
+          <label className="label">
+            <span className="label-text-alt opacity-70">
+              Value between 1 and 10
+            </span>
+          </label>
         </div>
-      )}
+        <div className="form-control w-full max-w-xs mb-6">
+          <label className="label">
+            <span className="label-text">Timer (Seconds)</span>
+          </label>
+          <input
+            type="number"
+            min="5"
+            max="20"
+            value={maxTimer}
+            onChange={(e) => setMaxTimer(parseInt(e.target.value) || 10)}
+            className="input input-bordered w-full max-w-xs"
+          />
+          <label className="label">
+            <span className="label-text-alt opacity-70">
+              Value between 5 and 20
+            </span>
+          </label>
+        </div>
+        <div className="form-control w-full max-w-xs mb-6">
+          <label className="label">
+            <span className="label-text">Change syllable after X turns</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="5"
+            value={syllableChangeThreshold}
+            onChange={(e) =>
+              setSyllableChangeThreshold(parseInt(e.target.value) || 1)
+            }
+            className="input input-bordered w-full max-w-xs"
+          />
+          <label className="label">
+            <span className="label-text-alt opacity-70">
+              Value between 1 and 5
+            </span>
+          </label>
+        </div>
+
+        <div className="form-control w-full max-w-xs mb-6 px-1">
+          <label className="label cursor-pointer justify-start gap-4">
+            <span className="label-text font-bold">Enable Chat</span>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={chatEnabled}
+              onChange={(e) => setChatEnabled(e.target.checked)}
+            />
+          </label>
+        </div>
+      </Modal>
 
       <div className="card bg-base-100 shadow-xl p-6 text-center border border-base-300">
         <div className="flex justify-between items-center mb-4">
@@ -450,7 +441,13 @@ function GameCanvasInner({
             {gameState === GameState.LOBBY && isAmAdmin && (
               <button
                 className="btn btn-ghost btn-sm btn-circle"
-                onClick={() => setIsSettingsOpen(true)}
+                onClick={() =>
+                  (
+                    document.getElementById(
+                      "settings_modal",
+                    ) as HTMLDialogElement
+                  )?.showModal()
+                }
                 title="Settings"
               >
                 <SettingsIcon />
@@ -633,7 +630,13 @@ function GameCanvasInner({
                     <>
                       <span className="badge badge-xs badge-primary">You</span>
                       <button
-                        onClick={() => setIsNameModalOpen(true)}
+                        onClick={() =>
+                          (
+                            document.getElementById(
+                              "name_modal",
+                            ) as HTMLDialogElement
+                          )?.showModal()
+                        }
                         className="btn btn-ghost btn-sm btn-circle"
                         title="Edit Name"
                       >
