@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef } from "react"
+import clsx from "clsx"
 import usePartySocket from "partysocket/react"
-import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
-import { CopyIcon, SettingsIcon, EditIcon } from "./Icons"
-import { CustomAvatar, Logo } from "./Logo"
-import { Modal } from "./Modal"
+import { useEffect, useRef, useState } from "react"
 import {
   ClientMessageType,
-  ServerMessageType,
   GameState,
+  ServerMessageType,
 } from "../../shared/types"
+import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
+import { CopyIcon, EditIcon, SettingsIcon } from "./Icons"
+import { CustomAvatar, Logo } from "./Logo"
+import { Modal } from "./Modal"
 
 type Player = {
   id: string
@@ -37,6 +38,7 @@ type ServerMessage = {
   chatEnabled?: boolean
   hide?: boolean
   syllableChangeThreshold?: number
+  gameLogEnabled?: boolean
 }
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz"
@@ -78,6 +80,7 @@ function GameCanvasInner({
   const [startingLives, setStartingLives] = useState(2)
   const [syllableChangeThreshold, setSyllableChangeThreshold] = useState(2)
   const [logs, setLogs] = useState<{ message: string; timestamp: number }[]>([])
+  const [gameLogEnabled, setGameLogEnabled] = useState(true)
   const [input, setInput] = useState("")
   const [activePlayerInput, setActivePlayerInput] = useState("")
 
@@ -179,6 +182,8 @@ function GameCanvasInner({
       if (data.chatEnabled !== undefined) setChatEnabled(data.chatEnabled)
       if (data.syllableChangeThreshold !== undefined)
         setSyllableChangeThreshold(data.syllableChangeThreshold)
+      if (data.gameLogEnabled !== undefined)
+        setGameLogEnabled(data.gameLogEnabled)
     } else if (data.type === ServerMessageType.ERROR) {
       if (!data.hide) {
         addLog(`Error: ${data.message}`)
@@ -258,6 +263,7 @@ function GameCanvasInner({
         startingLives,
         maxTimer,
         chatEnabled,
+        gameLogEnabled,
         syllableChangeThreshold,
       }),
     )
@@ -429,6 +435,18 @@ function GameCanvasInner({
               className="toggle toggle-primary"
               checked={chatEnabled}
               onChange={(e) => setChatEnabled(e.target.checked)}
+            />
+          </label>
+        </div>
+
+        <div className="form-control w-full max-w-xs mb-6 px-1">
+          <label className="label cursor-pointer justify-start gap-4">
+            <span className="label-text font-bold">Enable Game Log</span>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={gameLogEnabled}
+              onChange={(e) => setGameLogEnabled(e.target.checked)}
             />
           </label>
         </div>
@@ -674,29 +692,40 @@ function GameCanvasInner({
       </div>
 
       {/* Logs & Chat */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card bg-base-100 p-4 h-48 shadow-lg">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4`}>
+        <div
+          className={clsx(
+            "card bg-base-100 p-4 h-48 shadow-lg",
+            !gameLogEnabled && "opacity-25",
+          )}
+        >
           <h3 className="text-sm font-bold opacity-50 mb-2 uppercase tracking-wide">
             Game Log
           </h3>
           <div className="flex-1 overflow-y-auto font-mono text-xs space-y-1">
-            {logs.map((l, i) => (
-              <div key={i} className="border-l-2 border-primary/20 pl-2">
-                <span className="opacity-50 mr-2">
-                  {new Date(l.timestamp).toLocaleTimeString([], {
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  })}
-                </span>
-                {l.message}
-              </div>
-            ))}
+            {gameLogEnabled &&
+              logs.map((l, i) => (
+                <div key={i} className="border-l-2 border-primary/20 pl-2">
+                  <span className="opacity-50 mr-2">
+                    {new Date(l.timestamp).toLocaleTimeString([], {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </span>
+                  {l.message}
+                </div>
+              ))}
           </div>
         </div>
 
-        <div className="card bg-base-100 p-4 h-48 shadow-lg flex flex-col">
+        <div
+          className={clsx(
+            "card bg-base-100 p-4 h-48 shadow-lg flex flex-col",
+            !chatEnabled && "opacity-25",
+          )}
+        >
           <h3 className="text-sm font-bold opacity-50 mb-2 uppercase tracking-wide">
             Chat
           </h3>

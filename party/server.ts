@@ -1,6 +1,6 @@
 import type * as Party from "partykit/server"
-import { DictionaryManager } from "./dictionary"
 import { createLogger, Logger } from "../shared/logger"
+import { DictionaryManager } from "./dictionary"
 
 type Player = {
   id: string
@@ -16,8 +16,8 @@ type Player = {
 
 import {
   ClientMessageType,
-  ServerMessageType,
   GameState,
+  ServerMessageType,
   type ClientMessage,
 } from "../shared/types"
 
@@ -42,6 +42,7 @@ export default class Server implements Party.Server {
   maxTimer: number = 10
   startingLives: number = 2
   chatEnabled: boolean = true
+  gameLogEnabled: boolean = true
   syllableChangeThreshold: number = 2
   syllableTurnCount: number = 0
 
@@ -493,18 +494,20 @@ export default class Server implements Party.Server {
             }
             if (typeof data.chatEnabled === "boolean") {
               this.chatEnabled = data.chatEnabled
-              this.broadcast({
-                type: ServerMessageType.SYSTEM_MESSAGE,
-                message: this.chatEnabled ? "Chat enabled" : "Chat disabled",
-              })
             }
-            if (typeof data.syllableChangeThreshold === "number") {
-              // Clamp between 1 and 5
+            if (
+              data.syllableChangeThreshold !== undefined &&
+              typeof data.syllableChangeThreshold === "number"
+            ) {
               this.syllableChangeThreshold = Math.max(
                 1,
-                Math.min(5, data.syllableChangeThreshold),
+                Math.min(10, data.syllableChangeThreshold),
               )
             }
+            if (data.gameLogEnabled !== undefined) {
+              this.gameLogEnabled = !!data.gameLogEnabled
+            }
+
             this.broadcastState()
           }
           break
@@ -805,6 +808,8 @@ export default class Server implements Party.Server {
         startingLives: this.startingLives,
         maxTimer: this.maxTimer,
         chatEnabled: this.chatEnabled,
+        gameLogEnabled: this.gameLogEnabled,
+        syllableChangeThreshold: this.syllableChangeThreshold,
       }),
     )
   }
