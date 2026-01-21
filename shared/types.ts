@@ -21,8 +21,9 @@ export const GAME_CONFIG = {
     SYLLABLE_CHANGE: { MIN: 1, MAX: 10, DEFAULT: 2 },
   },
   WORDLE: {
-    TIMER: { MIN: 5, MAX: 300, DEFAULT: 60 },
+    TIMER: { MIN: 5, MAX: 120, DEFAULT: 60 },
     ATTEMPTS: { MIN: 5, MAX: 15, DEFAULT: 5 },
+    LENGTH: { MIN: 3, MAX: 15, DEFAULT: 5 },
   },
 }
 
@@ -57,6 +58,11 @@ export const WordleSettingsSchema = z.object({
     .number()
     .min(GAME_CONFIG.WORDLE.ATTEMPTS.MIN)
     .max(GAME_CONFIG.WORDLE.ATTEMPTS.MAX)
+    .optional(),
+  wordLength: z
+    .number()
+    .min(GAME_CONFIG.WORDLE.LENGTH.MIN)
+    .max(GAME_CONFIG.WORDLE.LENGTH.MAX)
     .optional(),
   chatEnabled: z.boolean().optional(),
   gameLogEnabled: z.boolean().optional(),

@@ -52,9 +52,10 @@ export default function WordleView({
   const {
     guesses = [] as Guess[],
     activePlayerId,
-    timer = 10,
-    maxTimer = 60,
-    maxAttempts = 5,
+    timer,
+    maxTimer,
+    maxAttempts,
+    wordLength,
     dictionaryLoaded,
   } = serverState
 
@@ -102,10 +103,10 @@ export default function WordleView({
   }
 
   const handleTyping = (val: string) => {
-    // Only allow letters and max 5 chars
+    // Only allow letters and max wordLength chars
     const cleaned = val
       .replace(/[^a-zA-Z]/g, "")
-      .slice(0, 5)
+      .slice(0, wordLength)
       .toUpperCase()
     setInput(cleaned)
     socket.send(
@@ -142,7 +143,7 @@ export default function WordleView({
   const visibleGuesses = guesses.slice(-1 * Math.max(5, maxAttempts))
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col gap-6 mx-auto w-full">
       {/* Header Card */}
       <div className="card bg-base-100 shadow-xl p-4 md:p-6 text-center border border-base-300">
         <div className="flex justify-between items-center mb-4">
@@ -184,8 +185,8 @@ export default function WordleView({
           <div className="flex flex-col gap-4 items-center py-6">
             <h2 className="text-2xl font-bold">Multiplayer Wordle</h2>
             <p className="opacity-70 max-w-md">
-              Take turns guessing the 5-letter word. Green means correct spot,
-              Yellow means wrong spot, Gray means not in word.
+              Take turns guessing the {wordLength}-letter word. Green means
+              correct spot, Yellow means wrong spot, Gray means not in word.
             </p>
 
             {isAdmin ? (
@@ -286,7 +287,7 @@ export default function WordleView({
               {/* Current Input Row (Only when playing) */}
               {gameState === GameState.PLAYING && (
                 <div className="flex gap-2">
-                  {Array.from({ length: 5 }).map((_, i) => {
+                  {Array.from({ length: wordLength }).map((_, i) => {
                     const char = (isMyTurn ? input : activePlayerInput)[i]
                     return (
                       <div
@@ -319,7 +320,7 @@ export default function WordleView({
                   value={input}
                   onChange={(e) => isMyTurn && handleTyping(e.target.value)}
                   autoFocus={isMyTurn}
-                  maxLength={5}
+                  maxLength={wordLength}
                 />
                 <button type="submit">Submit</button>
               </form>
@@ -345,7 +346,7 @@ export default function WordleView({
                       <button
                         key={key}
                         onClick={() => {
-                          if (isMyTurn && input.length < 5) {
+                          if (isMyTurn && input.length < wordLength) {
                             handleTyping(input + key)
                             inputRef.current?.focus()
                           }
@@ -397,7 +398,7 @@ export default function WordleView({
                     JSON.stringify({ type: WordleClientMessageType.STOP_GAME }),
                   )
                 }
-                className="btn btn-ghost btn-xs text-error mt-4"
+                className="btn btn-warning btn-small mt-4"
               >
                 Stop Game
               </button>

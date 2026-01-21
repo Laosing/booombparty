@@ -1,8 +1,9 @@
 import { GAME_CONFIG } from "../../../shared/types"
 
 interface WordleSettingsProps {
-  maxTimer: number
-  maxAttempts: number
+  maxTimer: number | string
+  maxAttempts: number | string
+  wordLength: number | string
   chatEnabled?: boolean
   gameLogEnabled?: boolean
   onUpdate: (settings: any) => void
@@ -11,6 +12,7 @@ interface WordleSettingsProps {
 export default function WordleSettings({
   maxTimer,
   maxAttempts,
+  wordLength,
   chatEnabled,
   gameLogEnabled,
   onUpdate,
@@ -49,13 +51,13 @@ export default function WordleSettings({
           type="number"
           min={GAME_CONFIG.WORDLE.TIMER.MIN}
           max={GAME_CONFIG.WORDLE.TIMER.MAX}
-          value={maxTimer}
-          onChange={(e) =>
+          value={maxTimer ?? GAME_CONFIG.WORDLE.TIMER.DEFAULT}
+          onChange={(e) => {
+            const val = e.target.value
             onUpdate({
-              maxTimer:
-                parseInt(e.target.value) || GAME_CONFIG.WORDLE.TIMER.DEFAULT,
+              maxTimer: val === "" ? "" : parseInt(val),
             })
-          }
+          }}
           className="input input-bordered w-full max-w-xs"
         />
         <label className="label">
@@ -74,19 +76,44 @@ export default function WordleSettings({
           type="number"
           min={GAME_CONFIG.WORDLE.ATTEMPTS.MIN}
           max={GAME_CONFIG.WORDLE.ATTEMPTS.MAX}
-          value={maxAttempts || GAME_CONFIG.WORDLE.ATTEMPTS.DEFAULT}
-          onChange={(e) =>
+          value={maxAttempts ?? GAME_CONFIG.WORDLE.ATTEMPTS.DEFAULT}
+          onChange={(e) => {
+            const val = e.target.value
             onUpdate({
-              maxAttempts:
-                parseInt(e.target.value) || GAME_CONFIG.WORDLE.ATTEMPTS.DEFAULT,
+              maxAttempts: val === "" ? "" : parseInt(val),
             })
-          }
+          }}
           className="input input-bordered w-full max-w-xs"
         />
         <label className="label">
           <span className="label-text-alt opacity-70">
             Value between {GAME_CONFIG.WORDLE.ATTEMPTS.MIN} and{" "}
             {GAME_CONFIG.WORDLE.ATTEMPTS.MAX}
+          </span>
+        </label>
+      </div>
+
+      <div className="form-control w-full max-w-xs mb-6">
+        <label className="label">
+          <span className="label-text">Word Length</span>
+        </label>
+        <input
+          type="number"
+          min={GAME_CONFIG.WORDLE.LENGTH.MIN}
+          max={GAME_CONFIG.WORDLE.LENGTH.MAX}
+          value={wordLength ?? GAME_CONFIG.WORDLE.LENGTH.DEFAULT}
+          onChange={(e) => {
+            const val = e.target.value
+            onUpdate({
+              wordLength: val === "" ? "" : parseInt(val),
+            })
+          }}
+          className="input input-bordered w-full max-w-xs"
+        />
+        <label className="label">
+          <span className="label-text-alt opacity-70">
+            Value between {GAME_CONFIG.WORDLE.LENGTH.MIN} and{" "}
+            {GAME_CONFIG.WORDLE.LENGTH.MAX}
           </span>
         </label>
       </div>

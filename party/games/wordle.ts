@@ -18,10 +18,12 @@ export class WordleGame extends BaseGame {
   guesses: Guess[] = []
 
   activePlayerId: string | null = null
+  winnerId: string | null | undefined = null
   turnStartTime: number = 0
   timer: number = 0
   maxTimer: number = GAME_CONFIG.WORDLE.TIMER.DEFAULT
   maxAttempts: number = GAME_CONFIG.WORDLE.ATTEMPTS.DEFAULT
+  wordLength: number = GAME_CONFIG.WORDLE.LENGTH.DEFAULT
 
   private tickInterval: ReturnType<typeof setTimeout> | null = null
   private nextTickTime: number = 0
@@ -41,6 +43,7 @@ export class WordleGame extends BaseGame {
     }
 
     this.server.gameState = GameState.PLAYING
+    this.winnerId = null
     this.guesses = []
 
     // Reset all players to alive
@@ -51,7 +54,7 @@ export class WordleGame extends BaseGame {
     // Pick target word
     if (!reuseWord || !this.targetWord) {
       try {
-        this.targetWord = this.server.dictionary.getRandomWord(5)
+        this.targetWord = this.server.dictionary.getRandomWord(this.wordLength)
       } catch (e) {
         this.broadcast({
           type: ServerMessageType.ERROR,
@@ -67,7 +70,7 @@ export class WordleGame extends BaseGame {
 
     this.broadcast({
       type: ServerMessageType.SYSTEM_MESSAGE,
-      message: "Wordle Game Started! Guess the 5-letter word.",
+      message: `Wordle Game Started! Guess the ${this.wordLength}-letter word.`,
     })
   }
 
@@ -120,6 +123,8 @@ export class WordleGame extends BaseGame {
                 this.maxTimer = settings.maxTimer
               if (settings.maxAttempts !== undefined)
                 this.maxAttempts = settings.maxAttempts
+              if (settings.wordLength !== undefined)
+                this.wordLength = settings.wordLength
               if (settings.chatEnabled !== undefined)
                 this.chatEnabled = settings.chatEnabled
               if (settings.gameLogEnabled !== undefined)
@@ -168,16 +173,11 @@ export class WordleGame extends BaseGame {
 
   handleTimeout() {
     // Record a failed attempt due to timeout
-    const results: GuessResult[] = [
-      "absent",
-      "absent",
-      "absent",
-      "absent",
-      "absent",
-    ]
+    const currentLen = this.targetWord.length || this.wordLength
+    const results: GuessResult[] = Array(currentLen).fill("absent")
     this.guesses.push({
       playerId: this.activePlayerId || "server",
-      word: "?????",
+      word: "?".repeat(currentLen),
       results,
       timestamp: Date.now(),
     })
@@ -238,14 +238,14 @@ export class WordleGame extends BaseGame {
 
   handleGuess(playerId: string, word: string) {
     const upperWord = word.toUpperCase().trim()
+    const targetLen = this.targetWord.length
 
-    if (upperWord.length !== 5) return
+    if (upperWord.length !== targetLen) return
 
     if (!this.server.dictionary.isWordValid(upperWord)) {
-      this.sendTo(playerId, {
+      this.broadcast({
         type: ServerMessageType.ERROR,
-        message: "Not in dictionary!",
-        hide: true,
+        message: "Not in my dictionary!",
       })
       return
     }
@@ -256,7 +256,7 @@ export class WordleGame extends BaseGame {
     const guessChars = upperWord.split("")
 
     // First pass: Correct
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < targetLen; i++) {
       if (guessChars[i] === targetChars[i]) {
         results[i] = "correct"
         targetChars[i] = "_"
@@ -265,7 +265,7 @@ export class WordleGame extends BaseGame {
     }
 
     // Second pass: Present
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < targetLen; i++) {
       if (guessChars[i] !== "_") {
         const index = targetChars.indexOf(guessChars[i])
         if (index !== -1) {
@@ -303,6 +303,7 @@ export class WordleGame extends BaseGame {
 
   endGame(winnerId?: string | null) {
     this.server.gameState = GameState.ENDED
+    this.winnerId = winnerId // Save winner for state sync
     if (this.tickInterval) clearTimeout(this.tickInterval)
     this.broadcast({
       type: ServerMessageType.GAME_OVER,
@@ -316,9 +317,14 @@ export class WordleGame extends BaseGame {
     return {
       guesses: this.guesses,
       activePlayerId: this.activePlayerId,
+      winnerId: this.winnerId, // Send valid winner ID
       timer: this.timer,
       maxTimer: this.maxTimer,
       maxAttempts: this.maxAttempts,
+      wordLength:
+        this.targetWord && this.targetWord.length > 0
+          ? this.targetWord.length
+          : this.wordLength,
       chatEnabled: this.chatEnabled,
       gameLogEnabled: this.gameLogEnabled,
     }

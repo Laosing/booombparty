@@ -381,6 +381,11 @@ function GameCanvasInner({
               serverState.maxAttempts ??
               GAME_CONFIG.WORDLE.ATTEMPTS.DEFAULT
             }
+            wordLength={
+              pendingSettings.wordLength ??
+              serverState.wordLength ??
+              GAME_CONFIG.WORDLE.LENGTH.DEFAULT
+            }
             chatEnabled={pendingSettings.chatEnabled ?? chatEnabled}
             gameLogEnabled={pendingSettings.gameLogEnabled ?? gameLogEnabled}
             onUpdate={handleSettingsUpdate}
