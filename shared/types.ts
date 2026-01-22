@@ -25,6 +25,10 @@ export const GAME_CONFIG = {
     ATTEMPTS: { MIN: 5, MAX: 15, DEFAULT: 5 },
     LENGTH: { MIN: 3, MAX: 15, DEFAULT: 5 },
   },
+  WORD_CHAIN: {
+    TIMER: { MIN: 5, MAX: 60, DEFAULT: 10 },
+    LIVES: { MIN: 1, MAX: 5, DEFAULT: 3 },
+  },
 }
 
 // Zod Schemas for Settings
@@ -68,8 +72,24 @@ export const WordleSettingsSchema = z.object({
   gameLogEnabled: z.boolean().optional(),
 })
 
+export const WordChainSettingsSchema = z.object({
+  maxTimer: z
+    .number()
+    .min(GAME_CONFIG.WORD_CHAIN.TIMER.MIN)
+    .max(GAME_CONFIG.WORD_CHAIN.TIMER.MAX)
+    .optional(),
+  startingLives: z
+    .number()
+    .min(GAME_CONFIG.WORD_CHAIN.LIVES.MIN)
+    .max(GAME_CONFIG.WORD_CHAIN.LIVES.MAX)
+    .optional(),
+  chatEnabled: z.boolean().optional(),
+  gameLogEnabled: z.boolean().optional(),
+})
+
 export type BombPartySettings = z.infer<typeof BombPartySettingsSchema>
 export type WordleSettings = z.infer<typeof WordleSettingsSchema>
+export type WordChainSettings = z.infer<typeof WordChainSettingsSchema>
 
 export type GuessResult = "correct" | "present" | "absent"
 
@@ -95,6 +115,7 @@ export type Player = {
 export enum GameMode {
   BOMB_PARTY = "BOMB_PARTY",
   WORDLE = "WORDLE",
+  WORD_CHAIN = "WORD_CHAIN",
 }
 
 export enum GameState {
@@ -126,6 +147,14 @@ export enum BombPartyClientMessageType {
   UPDATE_SETTINGS = "BP_UPDATE_SETTINGS",
 }
 
+export enum WordChainClientMessageType {
+  START_GAME = "WC_START_GAME",
+  STOP_GAME = "WC_STOP_GAME",
+  SUBMIT_WORD = "WC_SUBMIT_WORD",
+  UPDATE_TYPING = "WC_UPDATE_TYPING",
+  UPDATE_SETTINGS = "WC_UPDATE_SETTINGS",
+}
+
 export type GlobalClientMessage =
   | { type: GlobalClientMessageType.SET_NAME; name: string }
   | { type: GlobalClientMessageType.CHAT_MESSAGE; text: string }
@@ -149,7 +178,15 @@ export type BombPartyClientMessage =
   | { type: BombPartyClientMessageType.UPDATE_TYPING; text: string }
   | (BombPartySettings & { type: BombPartyClientMessageType.UPDATE_SETTINGS })
 
+export type WordChainClientMessage =
+  | { type: WordChainClientMessageType.START_GAME }
+  | { type: WordChainClientMessageType.STOP_GAME }
+  | { type: WordChainClientMessageType.SUBMIT_WORD; word: string }
+  | { type: WordChainClientMessageType.UPDATE_TYPING; text: string }
+  | (WordChainSettings & { type: WordChainClientMessageType.UPDATE_SETTINGS })
+
 export type ClientMessage =
   | GlobalClientMessage
   | WordleClientMessage
   | BombPartyClientMessage
+  | WordChainClientMessage

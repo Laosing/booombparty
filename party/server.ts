@@ -11,6 +11,7 @@ import type { ClientMessage, Player } from "../shared/types"
 import type { GameEngine } from "./game-engine"
 import { BombPartyGame } from "./games/bomb-party"
 import { WordleGame } from "./games/wordle"
+import { WordChainGame } from "./games/word-chain"
 
 export default class Server implements Party.Server {
   options: Party.ServerOptions = {
@@ -195,6 +196,9 @@ export default class Server implements Party.Server {
       switch (this.gameMode) {
         case GameMode.WORDLE:
           this.activeGame = new WordleGame(this)
+          break
+        case GameMode.WORD_CHAIN:
+          this.activeGame = new WordChainGame(this)
           break
         case GameMode.BOMB_PARTY:
         default:

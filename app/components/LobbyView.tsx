@@ -124,12 +124,16 @@ export default function LobbyView() {
             >
               <option value={GameMode.BOMB_PARTY}>Bomb Party</option>
               <option value={GameMode.WORDLE}>Wordle</option>
+              <option value={GameMode.WORD_CHAIN}>Word Chain</option>
             </select>
             <div className="label">
               <span className="label-text-alt">
-                {selectedMode === GameMode.BOMB_PARTY
-                  ? "Fast-paced word association game"
-                  : "Multiplayer cooperative word guessing"}
+                {selectedMode === GameMode.BOMB_PARTY &&
+                  "Fast-paced word association game"}
+                {selectedMode === GameMode.WORDLE &&
+                  "Multiplayer cooperative word guessing"}
+                {selectedMode === GameMode.WORD_CHAIN &&
+                  "Strategic last-letter word builder"}
               </span>
             </div>
           </div>

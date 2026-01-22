@@ -12,6 +12,8 @@ import {
   ServerMessageType,
   WordleClientMessageType,
   WordleSettingsSchema,
+  WordChainClientMessageType,
+  WordChainSettingsSchema,
 } from "../../shared/types"
 import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
 import { host } from "../utils"
@@ -22,6 +24,8 @@ import BombPartySettings from "./games/BombPartySettings"
 import BombPartyView from "./games/BombPartyView"
 import WordleSettings from "./games/WordleSettings"
 import WordleView from "./games/WordleView"
+import WordChainSettings from "./games/WordChainSettings"
+import WordChainView from "./games/WordChainView"
 
 type ServerMessage = {
   type: string
@@ -99,6 +103,16 @@ function GameCanvasInner({
           JSON.stringify({
             ...result.data,
             type: BombPartyClientMessageType.UPDATE_SETTINGS,
+          }),
+        )
+      }
+    } else if (gameMode === GameMode.WORD_CHAIN) {
+      const result = WordChainSettingsSchema.partial().safeParse(rawSettings)
+      if (result.success && Object.keys(result.data).length > 0) {
+        socket.send(
+          JSON.stringify({
+            ...result.data,
+            type: WordChainClientMessageType.UPDATE_SETTINGS,
           }),
         )
       }
@@ -391,6 +405,14 @@ function GameCanvasInner({
             onUpdate={handleSettingsUpdate}
           />
         )}
+        {gameMode === GameMode.WORD_CHAIN && (
+          <WordChainSettings
+            settings={pendingSettings}
+            onUpdate={(updates) =>
+              setPendingSettings((prev: any) => ({ ...prev, ...updates }))
+            }
+          />
+        )}
       </Modal>
 
       {/* Game Content */}
@@ -430,6 +452,23 @@ function GameCanvasInner({
               document.getElementById("settings_modal") as HTMLDialogElement
             )?.showModal()
           }
+          password={password}
+          room={room}
+        />
+      ) : gameMode === GameMode.WORD_CHAIN ? (
+        <WordChainView
+          socket={socket}
+          players={players}
+          gameState={gameState}
+          isAdmin={!!isAmAdmin}
+          serverState={serverState}
+          onKick={handleKick}
+          onEditName={() =>
+            (
+              document.getElementById("name_modal") as HTMLDialogElement
+            )?.showModal()
+          }
+          onOpenSettings={openSettings}
           room={room}
           password={password}
         />
