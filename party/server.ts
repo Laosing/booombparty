@@ -54,6 +54,7 @@ export default class Server implements Party.Server {
 
   // Bot Protection
   lastConnectionAttempts: Map<string, number> = new Map()
+  failedPasswordAttempts: Map<string, number> = new Map()
   initialAliveCount: number = 0
 
   constructor(room: Party.Room) {
@@ -218,11 +219,30 @@ export default class Server implements Party.Server {
     } else {
       // Subsequent players must match if password is set
       if (this.password && this.password !== passwordParam) {
+        const failures = (this.failedPasswordAttempts.get(ip) || 0) + 1
+        this.failedPasswordAttempts.set(ip, failures)
+
         this.logger.warn(
-          `Connection rejected: incorrect password for ${conn.id}`,
+          `Connection rejected: incorrect password for ${conn.id} (Attempt ${failures}/3)`,
         )
+
+        if (failures >= 3) {
+          this.blockedIPs.add(ip)
+          if (clientId) this.blockedIPs.add(clientId)
+          this.logger.warn(
+            `Banning IP ${ip} due to excessive password failures`,
+          )
+          conn.close(4003, "Banned: Too many failed password attempts.")
+          return
+        }
+
         conn.close(4000, "Invalid Password")
         return
+      }
+
+      // Clear failures on success
+      if (this.password && this.password === passwordParam) {
+        this.failedPasswordAttempts.delete(ip)
       }
     }
 

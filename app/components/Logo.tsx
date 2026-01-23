@@ -5,9 +5,18 @@ export const Logo = ({ name, random }: { name?: string; random?: boolean }) => {
   const [randomName, setRandomName] = useState<string | null>(null)
 
   useEffect(() => {
-    if (random && !name) {
+    function generateRandomName() {
       const randomString = Math.random().toString(36).substring(2, 6)
       setRandomName(randomString)
+    }
+    if (random && !name) {
+      generateRandomName()
+      const interval = setInterval(() => {
+        generateRandomName()
+      }, 1000)
+      return () => {
+        clearInterval(interval)
+      }
     }
   }, [random, name])
 

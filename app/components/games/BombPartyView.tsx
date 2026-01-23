@@ -133,8 +133,7 @@ export default function BombPartyView({
           <div className="flex flex-col gap-4 items-center">
             <h2 className="text-2xl font-bold">Bombparty</h2>
             <p className="opacity-70 max-w-md">
-              Welcome to booombparty! Type a word containing the letters before
-              time runs out!
+              Type a word containing the letters before time runs out!
             </p>
             <div className="flex flex-col sm:flex-row gap-2 items-center w-full justify-center">
               <div className="badge badge-lg badge-neutral gap-2">

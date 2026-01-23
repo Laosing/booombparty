@@ -3,6 +3,7 @@ import usePartySocket from "partysocket/react"
 import { CustomAvatar, Logo } from "./Logo"
 import { ServerMessageType, GameMode } from "../../shared/types"
 import { getGameModeName, host } from "../utils"
+import { useModal } from "./Modal"
 
 export default function LobbyView() {
   const [availableRooms, setAvailableRooms] = useState<
@@ -13,6 +14,9 @@ export default function LobbyView() {
   const [selectedMode, setSelectedMode] = useState<GameMode>(
     GameMode.BOMB_PARTY,
   )
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+  const [passwordInput, setPasswordInput] = useState("")
+
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
@@ -44,6 +48,8 @@ export default function LobbyView() {
     },
   })
 
+  const [PasswordModal, openPasswordModal] = useModal()
+
   const joinRoom = (room: string, password?: string, mode?: GameMode) => {
     let url = `/?room=${room}`
     if (password) url += `&password=${encodeURIComponent(password)}`
@@ -61,7 +67,9 @@ export default function LobbyView() {
     <div className="container mx-auto p-4 flex flex-col gap-8 max-w-4xl relative">
       <div className="card bg-base-100 shadow-xl p-8 text-center border border-base-300">
         <Logo random />
-        <p className="opacity-70">Choose a room to join or create a new one.</p>
+        <p className="opacity-70 mt-4">
+          Choose a room to join or create a new one.
+        </p>
 
         {errorMsg && (
           <div className="alert alert-error mt-4 relative">
@@ -156,8 +164,9 @@ export default function LobbyView() {
                 key={r.id}
                 onClick={() => {
                   if (r.isPrivate) {
-                    const p = prompt("Enter password for " + r.id)
-                    if (p) joinRoom(r.id, p, r.mode)
+                    setSelectedRoomId(r.id)
+                    setPasswordInput("")
+                    openPasswordModal()
                   } else {
                     joinRoom(r.id, undefined, r.mode)
                   }
@@ -185,6 +194,28 @@ export default function LobbyView() {
           </div>
         </div>
       </div>
+
+      <PasswordModal
+        title={`Enter password for ${selectedRoomId?.toUpperCase()}`}
+        onActionClick={() => {
+          if (selectedRoomId && passwordInput) {
+            joinRoom(
+              selectedRoomId,
+              passwordInput,
+              availableRooms.find((r) => r.id === selectedRoomId)?.mode,
+            )
+          }
+        }}
+        onActionText="Join"
+      >
+        <input
+          type="password"
+          value={passwordInput}
+          onChange={(e) => setPasswordInput(e.target.value)}
+          placeholder="Password"
+          className="input input-bordered w-full"
+        />
+      </PasswordModal>
     </div>
   )
 }

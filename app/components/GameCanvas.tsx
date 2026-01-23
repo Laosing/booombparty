@@ -18,7 +18,7 @@ import {
 import { useMultiTabPrevention } from "../hooks/useMultiTabPrevention"
 import { host } from "../utils"
 import { Logo } from "./Logo"
-import { Modal } from "./Modal"
+import { useModal } from "./Modal"
 import StatusCard from "./StatusCard"
 import BombPartySettings from "./games/BombPartySettings"
 import BombPartyView from "./games/BombPartyView"
@@ -60,15 +60,16 @@ function GameCanvasInner({
   // Settings State (Buffered)
   const [pendingSettings, setPendingSettings] = useState<any>({})
 
+  const [SettingsModal, openSettingsModal] = useModal()
+  const [NameModal, openNameModal] = useModal()
+
   const openSettings = () => {
     setPendingSettings({
       chatEnabled,
       gameLogEnabled,
       ...serverState,
     })
-    ;(
-      document.getElementById("settings_modal") as HTMLDialogElement
-    )?.showModal() // Explicitly open since we control logic
+    openSettingsModal()
   }
 
   const saveSettings = () => {
@@ -118,7 +119,6 @@ function GameCanvasInner({
       }
     }
 
-    ;(document.getElementById("settings_modal") as HTMLDialogElement)?.close()
     setPendingSettings({})
   }
 
@@ -308,33 +308,13 @@ function GameCanvasInner({
 
   const isAmAdmin = players.find((p) => p.id === socket.id)?.isAdmin
 
-  console.log({ gameMode })
-
   return (
     <div className="container mx-auto p-4 flex flex-col gap-6 max-w-4xl">
       {/* Name Modal */}
-      <Modal
-        id="name_modal"
+      <NameModal
         title="Change Name"
-        actions={
-          <>
-            <form method="dialog">
-              <button className="btn btn-ghost">Cancel</button>
-            </form>
-            <button
-              onClick={() => {
-                handleNameChange()
-                ;(
-                  document.getElementById("name_modal") as HTMLDialogElement
-                )?.close()
-              }}
-              disabled={isNameDisabled || !nameInput.trim()}
-              className="btn btn-primary"
-            >
-              Save
-            </button>
-          </>
-        }
+        onActionClick={handleNameChange}
+        actionDisabled={isNameDisabled}
       >
         <div className="flex flex-col gap-4">
           <input
@@ -345,22 +325,13 @@ function GameCanvasInner({
             maxLength={16}
           />
         </div>
-      </Modal>
+      </NameModal>
 
       {/* Settings Modal - Generic Shell */}
-      <Modal
-        id="settings_modal"
+      <SettingsModal
         title="Game Settings"
-        actions={
-          <>
-            <form method="dialog">
-              <button className="btn btn-ghost">Cancel</button>
-            </form>
-            <button className="btn btn-primary" onClick={saveSettings}>
-              Save
-            </button>
-          </>
-        }
+        onActionClick={saveSettings}
+        onActionText="Save"
       >
         {/* Game Specific Settings */}
         {gameMode === GameMode.BOMB_PARTY && (
@@ -415,7 +386,7 @@ function GameCanvasInner({
             }
           />
         )}
-      </Modal>
+      </SettingsModal>
 
       {/* Game Content */}
       {gameMode === GameMode.WORDLE && (
@@ -426,11 +397,7 @@ function GameCanvasInner({
           isAdmin={!!isAmAdmin}
           serverState={serverState}
           onKick={handleKick}
-          onEditName={() =>
-            (
-              document.getElementById("name_modal") as HTMLDialogElement
-            )?.showModal()
-          }
+          onEditName={openNameModal}
           onOpenSettings={openSettings}
           room={room}
           password={password}
@@ -445,16 +412,8 @@ function GameCanvasInner({
           isAdmin={!!isAmAdmin}
           serverState={serverState}
           onKick={handleKick}
-          onEditName={() =>
-            (
-              document.getElementById("name_modal") as HTMLDialogElement
-            )?.showModal()
-          }
-          onOpenSettings={() =>
-            (
-              document.getElementById("settings_modal") as HTMLDialogElement
-            )?.showModal()
-          }
+          onEditName={openNameModal}
+          onOpenSettings={openSettings}
           password={password}
           room={room}
         />
@@ -467,11 +426,7 @@ function GameCanvasInner({
           isAdmin={!!isAmAdmin}
           serverState={serverState}
           onKick={handleKick}
-          onEditName={() =>
-            (
-              document.getElementById("name_modal") as HTMLDialogElement
-            )?.showModal()
-          }
+          onEditName={openNameModal}
           onOpenSettings={openSettings}
           room={room}
           password={password}
@@ -666,7 +621,7 @@ export default function GameCanvas({ room }: { room: string }) {
         >
           <input
             type="password"
-            placeholder="Enter Password"
+            placeholder="Enter password"
             className="input input-bordered w-full text-center"
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}

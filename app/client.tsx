@@ -78,7 +78,7 @@ function App() {
   const room = params.get("room")
 
   return (
-    <main className="relative px-6 pt-14 lg:px-8">
+    <main className="relative px-6 pt-14 lg:px-8 h-full">
       <div
         className="absolute inset-0 h-full w-full -z-1 transition-all duration-700 ease-in-out"
         style={{
