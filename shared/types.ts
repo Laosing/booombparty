@@ -19,6 +19,7 @@ export const GAME_CONFIG = {
     LIVES: { MIN: 1, MAX: 10, DEFAULT: 2 },
     TIMER: { MIN: 5, MAX: 60, DEFAULT: 10 },
     SYLLABLE_CHANGE: { MIN: 1, MAX: 10, DEFAULT: 2 },
+    BONUS_LENGTH: { MIN: 5, MAX: 20, DEFAULT: 11 },
   },
   WORDLE: {
     TIMER: { MIN: 5, MAX: 120, DEFAULT: 60 },
@@ -27,7 +28,7 @@ export const GAME_CONFIG = {
   },
   WORD_CHAIN: {
     TIMER: { MIN: 5, MAX: 60, DEFAULT: 10 },
-    LIVES: { MIN: 1, MAX: 5, DEFAULT: 3 },
+    LIVES: { MIN: 1, MAX: 5, DEFAULT: 2 },
   },
 }
 
@@ -47,6 +48,11 @@ export const BombPartySettingsSchema = z.object({
     .number()
     .min(GAME_CONFIG.BOMB_PARTY.SYLLABLE_CHANGE.MIN)
     .max(GAME_CONFIG.BOMB_PARTY.SYLLABLE_CHANGE.MAX)
+    .optional(),
+  bonusWordLength: z
+    .number()
+    .min(GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.MIN)
+    .max(GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.MAX)
     .optional(),
   chatEnabled: z.boolean().optional(),
   gameLogEnabled: z.boolean().optional(),
@@ -110,6 +116,7 @@ export type Player = {
   isAdmin: boolean
   clientId?: string
   lastTurn?: { word: string; syllable: string }
+  bonusLetters?: string[]
 }
 
 export enum GameMode {

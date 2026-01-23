@@ -5,6 +5,7 @@ interface BombPartySettingsProps {
   startingLives: number
   maxTimer: number
   syllableChangeThreshold: number
+  bonusWordLength: number
   chatEnabled?: boolean
   gameLogEnabled?: boolean
   onUpdate: (settings: any) => void
@@ -14,6 +15,7 @@ export default function BombPartySettings({
   startingLives,
   maxTimer,
   syllableChangeThreshold,
+  bonusWordLength,
   chatEnabled,
   gameLogEnabled,
   onUpdate,
@@ -57,6 +59,15 @@ export default function BombPartySettings({
         max={GAME_CONFIG.BOMB_PARTY.SYLLABLE_CHANGE.MAX}
         onChange={(val) => onUpdate({ syllableChangeThreshold: val || 1 })}
         helperText={`Value between ${GAME_CONFIG.BOMB_PARTY.SYLLABLE_CHANGE.MIN} and ${GAME_CONFIG.BOMB_PARTY.SYLLABLE_CHANGE.MAX}`}
+      />
+
+      <NumberInput
+        label="Bonus Letter Word Length"
+        value={bonusWordLength}
+        min={GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.MIN}
+        max={GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.MAX}
+        onChange={(val) => onUpdate({ bonusWordLength: val || 11 })}
+        helperText={`Length between ${GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.MIN} and ${GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.MAX}. Determines word length required to earn a free letter.`}
       />
     </>
   )

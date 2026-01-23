@@ -173,14 +173,19 @@ export default function BombPartyView({
           <div>
             <div className="my-1 flex w-full justify-center gap-0.5 flex-wrap px-2">
               {[...ALPHABET].map((letter) => {
-                const isUsed = players
-                  .find((p) => p.id === socket.id)
-                  ?.usedLetters.includes(letter.toLocaleUpperCase())
+                const me = players.find((p) => p.id === socket.id)
+                const isUsed = me?.usedLetters.includes(
+                  letter.toLocaleUpperCase(),
+                )
+                const isBonus = me?.bonusLetters?.includes(
+                  letter.toLocaleUpperCase(),
+                )
+
                 return (
                   <div
                     className={`kbd ${
                       isUsed ? "kbd-primary opacity-100" : "opacity-30"
-                    }`}
+                    } ${isBonus ? "text-warning border-warning font-black" : ""}`}
                     key={letter}
                   >
                     {letter.toUpperCase()}

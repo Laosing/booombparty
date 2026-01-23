@@ -20,6 +20,7 @@ export class BombPartyGame extends BaseGame {
   startingLives: number = GAME_CONFIG.BOMB_PARTY.LIVES.DEFAULT
   syllableChangeThreshold: number =
     GAME_CONFIG.BOMB_PARTY.SYLLABLE_CHANGE.DEFAULT
+  bonusWordLength: number = GAME_CONFIG.BOMB_PARTY.BONUS_LENGTH.DEFAULT
   syllableTurnCount: number = 0
 
   turnStartTime: number = 0
@@ -269,6 +270,8 @@ export class BombPartyGame extends BaseGame {
                 this.maxTimer = settings.maxTimer
               if (settings.syllableChangeThreshold !== undefined)
                 this.syllableChangeThreshold = settings.syllableChangeThreshold
+              if (settings.bonusWordLength !== undefined)
+                this.bonusWordLength = settings.bonusWordLength
               if (settings.chatEnabled !== undefined)
                 this.chatEnabled = settings.chatEnabled
               if (settings.gameLogEnabled !== undefined)
@@ -314,9 +317,27 @@ export class BombPartyGame extends BaseGame {
             p.usedLetters.push(char)
           }
         }
+
+        // NEW: Bonus Letter Feature (Configurable Length)
+        if (word.length >= this.bonusWordLength && p.usedLetters.length < 26) {
+          const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
+          const missing = alphabet.filter((c) => !p.usedLetters.includes(c))
+          if (missing.length > 0) {
+            const bonus = missing[Math.floor(Math.random() * missing.length)]
+            p.usedLetters.push(bonus)
+            if (!p.bonusLetters) p.bonusLetters = []
+            p.bonusLetters.push(bonus)
+            this.broadcast({
+              type: ServerMessageType.BONUS,
+              message: `Long Word Bonus! ${p.name} gets '${bonus}'!`,
+            })
+          }
+        }
+
         if (p.usedLetters.length === 26) {
           p.lives++
           p.usedLetters = []
+          p.bonusLetters = []
           this.broadcast({
             type: ServerMessageType.BONUS,
             message: `Alphabet Complete! ${p.name} gains a life!`,
@@ -345,6 +366,7 @@ export class BombPartyGame extends BaseGame {
       maxTimer: this.maxTimer,
       startingLives: this.startingLives,
       syllableChangeThreshold: this.syllableChangeThreshold,
+      bonusWordLength: this.bonusWordLength,
       dictionaryLoaded: this.server.dictionaryReady,
       chatEnabled: this.chatEnabled,
       gameLogEnabled: this.gameLogEnabled,
