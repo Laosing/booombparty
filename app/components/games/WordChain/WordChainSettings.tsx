@@ -1,7 +1,7 @@
-import type { WordChainSettings } from "../../../shared/types"
-import { GAME_CONFIG } from "../../../shared/types"
+import type { WordChainSettings } from "../../../../shared/types"
+import { GAME_CONFIG } from "../../../../shared/types"
 
-import { NumberInput, ToggleInput } from "../SettingsInputs"
+import { NumberInput, ToggleInput } from "../../SettingsInputs"
 
 interface WordChainSettingsProps {
   settings: WordChainSettings

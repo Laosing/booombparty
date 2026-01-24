@@ -5,11 +5,10 @@ import {
   GameState,
   type Player,
   ServerMessageType,
-} from "../../../shared/types"
-import { CustomAvatar } from "../Logo"
-import { GameHeader } from "../GameHeader"
-import { EditIcon } from "../Icons"
-import { WordHighlight } from "../WordHighlight"
+} from "../../../../shared/types"
+import { GameHeader } from "../../GameHeader"
+import { WordHighlight } from "../../WordHighlight"
+import { PlayerCard } from "../../PlayerCard"
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 
@@ -265,71 +264,28 @@ export default function BombPartyView({
       {/* Players Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {players.map((p) => (
-          <div
+          <PlayerCard
             key={p.id}
-            className={`card p-4 transition-all duration-300 border-2 relative group ${
-              p.id === activePlayerId
-                ? "border-primary bg-primary/10 scale-105 z-10 shadow-lg"
-                : "border-transparent bg-base-100 placeholder-opacity-50"
-            } ${!p.isAlive ? "opacity-50 grayscale" : ""}`}
+            player={p}
+            isMe={p.id === socket.id}
+            isAdmin={isAdmin}
+            isActive={
+              gameState === GameState.PLAYING && p.id === activePlayerId
+            }
+            onKick={onKick}
+            onEditName={onEditName}
           >
-            {isAdmin && p.id !== socket.id && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onKick(p.id)
-                }}
-                className="absolute top-2 right-2 btn btn-xs btn-error btn-square opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                title="Kick Player"
-              >
-                ✕
-              </button>
+            {p.lastTurn && (
+              <div className="text-xs opacity-60 mt-1">
+                <span className="text-base-content/80 font-medium">
+                  <WordHighlight
+                    word={p.lastTurn.word}
+                    highlight={p.lastTurn.syllable}
+                  />
+                </span>
+              </div>
             )}
-
-            <div className="flex flex-col items-center gap-2">
-              <div className="avatar indicator">
-                {p.isAdmin && (
-                  <span className="indicator-item indicator-center badge badge-warning badge-sm">
-                    Admin
-                  </span>
-                )}
-                <CustomAvatar name={p.name} />
-              </div>
-              <div className="text-center">
-                <h3 className="font-bold flex items-center gap-1 justify-center">
-                  {p.name}{" "}
-                  {p.id === socket.id && (
-                    <>
-                      <span className="badge badge-xs badge-primary">You</span>
-                      <button
-                        onClick={onEditName}
-                        className="btn btn-ghost btn-sm btn-circle"
-                        title="Edit Name"
-                      >
-                        <EditIcon />
-                      </button>
-                    </>
-                  )}
-                </h3>
-                <div className="flex gap-1 justify-center text-error mt-1 text-sm">
-                  {"❤".repeat(Math.max(0, p.lives))}
-                </div>
-                <div className="text-xs opacity-60 mt-1">
-                  Wins: {p.wins || 0}
-                </div>
-                {p.lastTurn && (
-                  <div className="text-xs opacity-60 mt-1">
-                    <span className="text-base-content/80 font-medium">
-                      <WordHighlight
-                        word={p.lastTurn.word}
-                        highlight={p.lastTurn.syllable}
-                      />
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          </PlayerCard>
         ))}
       </div>
     </>

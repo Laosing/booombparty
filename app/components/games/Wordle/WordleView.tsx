@@ -7,11 +7,10 @@ import {
   ServerMessageType,
   type Guess,
   type GuessResult,
-} from "../../../shared/types"
-import { CustomAvatar } from "../Logo"
-import { EditIcon } from "../Icons"
-import { GameHeader } from "../GameHeader"
+} from "../../../../shared/types"
+import { GameHeader } from "../../GameHeader"
 import clsx from "clsx"
+import { PlayerCard } from "../../PlayerCard"
 
 interface WordleViewProps {
   socket: PartySocket
@@ -430,60 +429,18 @@ export default function WordleView({
       {/* Players Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {players.map((p) => (
-          <div
+          <PlayerCard
             key={p.id}
-            className={clsx(
-              "card p-4 transition-all duration-300 border-2 relative group",
-              p.id === activePlayerId
-                ? "border-primary bg-primary/10 scale-105 z-10 shadow-lg"
-                : "border-transparent bg-base-100 placeholder-opacity-50",
-            )}
-          >
-            {isAdmin && p.id !== socket.id && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onKick(p.id)
-                }}
-                className="absolute top-2 right-2 btn btn-xs btn-error btn-square opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                title="Kick Player"
-              >
-                ✕
-              </button>
-            )}
-
-            <div className="flex flex-col items-center gap-2">
-              <div className="avatar indicator">
-                {p.isAdmin && (
-                  <span className="indicator-item indicator-center badge badge-warning badge-sm">
-                    Admin
-                  </span>
-                )}
-                <CustomAvatar name={p.name} />
-              </div>
-              <div className="text-center">
-                <h3 className="font-bold flex items-center gap-1 justify-center">
-                  {p.name}{" "}
-                  {p.id === socket.id && (
-                    <>
-                      <span className="badge badge-xs badge-primary">You</span>
-                      <button
-                        onClick={onEditName}
-                        className="btn btn-ghost btn-sm btn-circle"
-                        title="Edit Name"
-                      >
-                        <EditIcon />
-                      </button>
-                    </>
-                  )}
-                </h3>
-
-                <div className="text-xs opacity-60 mt-1">
-                  Wins: {p.wins || 0}
-                </div>
-              </div>
-            </div>
-          </div>
+            player={p}
+            isMe={p.id === socket.id}
+            isAdmin={isAdmin}
+            isActive={
+              gameState === GameState.PLAYING && p.id === activePlayerId
+            }
+            onKick={onKick}
+            onEditName={onEditName}
+            showLives={false}
+          />
         ))}
       </div>
     </div>

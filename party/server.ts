@@ -387,7 +387,7 @@ export default class Server implements Party.Server {
         }),
       })
     } catch (e) {
-      // ignore lobby reporting errors
+      this.logger.error("Failed to report to lobby", e)
     }
   }
 

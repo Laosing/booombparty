@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react"
 import { generateAvatar } from "../utils/avatar"
 
-export const Logo = ({ name, random }: { name?: string; random?: boolean }) => {
+export const Logo = ({
+  name,
+  random,
+  showText = true,
+  size = 48,
+}: {
+  name?: string
+  random?: boolean
+  showText?: boolean
+  size?: number
+}) => {
   const [randomName, setRandomName] = useState<string | null>(null)
 
   useEffect(() => {
@@ -24,8 +34,14 @@ export const Logo = ({ name, random }: { name?: string; random?: boolean }) => {
 
   return (
     <div className="flex items-center justify-center gap-4">
-      {displayName ? <CustomAvatar name={displayName} /> : <LogoIcon />}
-      <h1 className="text-4xl font-bold text-primary">booombparty</h1>
+      {displayName ? (
+        <CustomAvatar name={displayName} width={size} height={size} />
+      ) : (
+        <LogoIcon width={size} height={size} />
+      )}
+      {showText && (
+        <h1 className="text-4xl font-bold text-primary">booombparty</h1>
+      )}
     </div>
   )
 }

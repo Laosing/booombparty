@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 import {
   WordChainClientMessageType,
   GameState,
   type Player,
   ServerMessageType,
-} from "../../../shared/types"
-import { CustomAvatar } from "../Logo"
-import { EditIcon } from "../Icons"
+} from "../../../../shared/types"
+import { EditIcon } from "../../Icons"
 import clsx from "clsx"
-import { GameHeader } from "../GameHeader"
+import { GameHeader } from "../../GameHeader"
+import PartySocket from "partysocket"
+import { PlayerCard } from "../../PlayerCard"
 
 interface WordChainViewProps {
   socket: PartySocket
@@ -23,7 +24,6 @@ interface WordChainViewProps {
   room: string
   password?: string | null
 }
-import PartySocket from "partysocket"
 
 export default function WordChainView({
   socket,
@@ -40,6 +40,7 @@ export default function WordChainView({
   const [input, setInput] = useState("")
   const [activePlayerInput, setActivePlayerInput] = useState("")
   const [tempError, setTempError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const { currentWord = "", activePlayerId, timer, maxTimer } = serverState
 
@@ -73,12 +74,10 @@ export default function WordChainView({
   // Clear active input on turn change or game state change
   useEffect(() => {
     setActivePlayerInput("")
-    if (activePlayerId === socket.id) {
-      // my turn, clear my input? Or keep it? Usually clear on turn start?
-      // Actually view clears input on submit.
-      // But if I become active, I should ensure input is focused and clean?
-      // BombParty clears it.
+    if (activePlayerId === socket.id && gameState === GameState.PLAYING) {
       setInput("")
+      // Small timeout to allow render to complete/enable input before focusing
+      setTimeout(() => inputRef.current?.focus(), 10)
     }
   }, [activePlayerId, gameState, socket.id])
 
@@ -100,6 +99,7 @@ export default function WordChainView({
       }),
     )
     setInput("")
+    // Refocus after submit (though next turn change handles it if we are still active, but usually turn passes)
   }
 
   // Handle typing to show status?
@@ -121,15 +121,6 @@ export default function WordChainView({
         isAdmin={isAdmin}
         gameState={gameState}
         onOpenSettings={onOpenSettings}
-        additionalRightControls={
-          <button
-            className="btn btn-ghost btn-circle btn-sm"
-            onClick={onEditName}
-            title="Edit Name"
-          >
-            <EditIcon />
-          </button>
-        }
       >
         {/* Game Area wrapper end tag will need to change if structure changes */}
 
@@ -161,11 +152,9 @@ export default function WordChainView({
 
           {gameState === GameState.PLAYING && (
             <div className="flex flex-col items-center gap-6 w-full">
-              <div className="text-3xl md:text-5xl font-black mb-4 flex items-center gap-2">
+              <div className="text-3xl md:text-5xl font-black mb-4">
                 <span className="opacity-50">{currentWord.slice(0, -1)}</span>
-                <span className="text-primary scale-110 inline-block border-b-4 border-primary">
-                  {lastChar}
-                </span>
+                <span className="text-primary">{lastChar}</span>
               </div>
 
               <div className="w-full max-w-sm">
@@ -188,6 +177,7 @@ export default function WordChainView({
                 className="w-full max-w-sm relative"
               >
                 <input
+                  ref={inputRef}
                   autoFocus={isMyTurn}
                   disabled={!isMyTurn}
                   type="text"
@@ -265,55 +255,17 @@ export default function WordChainView({
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {players.map((p) => (
-            <div
+            <PlayerCard
               key={p.id}
-              className={clsx(
-                "flex items-center gap-2 p-2 rounded-lg border-2 transition-colors",
-                {
-                  "border-primary bg-primary/10": p.id === activePlayerId,
-                  "border-transparent bg-base-200": p.id !== activePlayerId,
-                  "opacity-50 grayscale": !p.isAlive,
-                },
-              )}
-            >
-              <div className="relative">
-                <CustomAvatar
-                  name={p.name}
-                  color={
-                    p.isAlive
-                      ? "bg-primary text-primary-content"
-                      : "bg-neutral text-neutral-content"
-                  }
-                />
-                {/* Heart count / Lives */}
-                {p.isAlive && (
-                  <div className="absolute -top-1 -right-1 bg-error text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
-                    {p.lives}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col min-w-0">
-                <span className="font-bold text-sm truncate">{p.name}</span>
-                <span className="text-[10px] opacity-70 truncate">
-                  {p.isAlive
-                    ? p.id === activePlayerId
-                      ? "Thinking..."
-                      : "Waiting"
-                    : "Out"}
-                </span>
-              </div>
-
-              {isAdmin && p.id !== socket.id && (
-                <button
-                  onClick={() => onKick(p.id)}
-                  className="ml-auto btn btn-ghost btn-xs btn-circle text-error"
-                  title="Kick"
-                >
-                  ×
-                </button>
-              )}
-            </div>
+              player={p}
+              isMe={p.id === socket.id}
+              isAdmin={isAdmin}
+              isActive={
+                gameState === GameState.PLAYING && p.id === activePlayerId
+              }
+              onKick={onKick}
+              onEditName={onEditName}
+            />
           ))}
         </div>
       </div>

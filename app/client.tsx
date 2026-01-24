@@ -1,33 +1,24 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { RouterProvider } from "@tanstack/react-router"
+import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import GameCanvas from "./components/GameCanvas"
-import LobbyView from "./components/LobbyView"
-import ThemeController from "./components/ThemeController"
 import "./styles.css"
+import { router } from "./router"
 
+// Layout styles
 import "react-grid-layout/css/styles.css"
 import "react-resizable/css/styles.css"
 
-import { StrictMode } from "react"
+const queryClient = new QueryClient()
 
 function App() {
-  const params = new URLSearchParams(window.location.search)
-  const room = params.get("room")
-
   return (
-    <main className="relative h-full">
-      <ThemeController />
-      {room ? <GameCanvas room={room} /> : <LobbyView />}
-      {/* <GridLayout className="layout" layout={layout} width={1200}>
-        <div key="a">a</div>
-        <div key="b">b</div>
-        <div key="c">c</div>
-        </GridLayout> */}
-    </main>
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </StrictMode>
   )
 }
 
-createRoot(document.getElementById("app")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+createRoot(document.getElementById("app")!).render(<App />)

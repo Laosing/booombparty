@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import usePartySocket from "partysocket/react"
-import { CustomAvatar, Logo } from "./Logo"
-import { ServerMessageType, GameMode } from "../../shared/types"
+import { useEffect, useState } from "react"
+import { GameMode, ServerMessageType } from "../../shared/types"
 import { getGameModeName, host } from "../utils"
-import { useModal } from "./Modal"
+import { CustomAvatar, Logo } from "./Logo"
+import { Modal } from "./Modal"
 
 export default function LobbyView() {
+  const navigate = useNavigate()
   const [availableRooms, setAvailableRooms] = useState<
     { id: string; players: number; isPrivate?: boolean; mode?: GameMode }[]
   >([])
@@ -16,6 +18,7 @@ export default function LobbyView() {
   )
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [passwordInput, setPasswordInput] = useState("")
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -48,13 +51,12 @@ export default function LobbyView() {
     },
   })
 
-  const [PasswordModal, openPasswordModal] = useModal()
-
   const joinRoom = (room: string, password?: string, mode?: GameMode) => {
-    let url = `/?room=${room}`
-    if (password) url += `&password=${encodeURIComponent(password)}`
-    if (mode) url += `&mode=${encodeURIComponent(mode)}`
-    window.location.href = url
+    navigate({
+      to: "/$room",
+      params: { room },
+      search: { mode, password },
+    })
   }
 
   const handleCreate = (e: React.FormEvent) => {
@@ -166,7 +168,7 @@ export default function LobbyView() {
                   if (r.isPrivate) {
                     setSelectedRoomId(r.id)
                     setPasswordInput("")
-                    openPasswordModal()
+                    setIsPasswordModalOpen(true)
                   } else {
                     joinRoom(r.id, undefined, r.mode)
                   }
@@ -195,7 +197,7 @@ export default function LobbyView() {
         </div>
       </div>
 
-      <PasswordModal
+      <Modal
         title={`Enter password for ${selectedRoomId?.toUpperCase()}`}
         onActionClick={() => {
           if (selectedRoomId && passwordInput) {
@@ -207,6 +209,8 @@ export default function LobbyView() {
           }
         }}
         onActionText="Join"
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
       >
         <input
           type="password"
@@ -215,7 +219,7 @@ export default function LobbyView() {
           placeholder="Password"
           className="input input-bordered w-full"
         />
-      </PasswordModal>
+      </Modal>
     </div>
   )
 }

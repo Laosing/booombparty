@@ -68,11 +68,40 @@ export class BombPartyGame extends BaseGame {
   onTick(): void {
     if (this.server.gameState !== GameState.PLAYING) return
 
+    // Defensive check: If active player is gone, skip turn immediately
+    // Ideally onPlayerLeave handles this, but this catches edge cases
+    if (this.activePlayerId && !this.players.has(this.activePlayerId)) {
+      this.nextTurn(false, undefined, false)
+      // Don't tick timer down this frame, just switch
+      return
+    }
+
     this.timer -= 1
     this.broadcast({ type: ServerMessageType.STATE_UPDATE, timer: this.timer })
 
     if (this.timer <= 0) {
       this.handleExplosion()
+    }
+  }
+
+  onPlayerLeave(playerId: string): void {
+    // If the active player left, immediately move to next turn
+    if (
+      this.server.gameState === GameState.PLAYING &&
+      this.activePlayerId === playerId
+    ) {
+      // The player is already removed from this.players by the server
+      this.broadcast({
+        type: ServerMessageType.SYSTEM_MESSAGE,
+        message: "Active player left! Passing turn...",
+      })
+      this.checkWinCondition() // Check if game should end
+      if (this.server.gameState === GameState.PLAYING) {
+        this.nextTurn(false, undefined, false)
+      }
+    } else {
+      // If a non-active player left, we still check win condition (e.g. if they were the only other survivor)
+      this.checkWinCondition()
     }
   }
 

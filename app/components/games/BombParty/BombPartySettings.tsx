@@ -1,5 +1,5 @@
-import { GAME_CONFIG } from "../../../shared/types"
-import { NumberInput, ToggleInput } from "../SettingsInputs"
+import { GAME_CONFIG } from "../../../../shared/types"
+import { NumberInput, ToggleInput } from "../../SettingsInputs"
 
 interface BombPartySettingsProps {
   startingLives: number

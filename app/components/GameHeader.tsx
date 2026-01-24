@@ -10,7 +10,6 @@ interface GameHeaderProps {
   gameState: GameState
   onOpenSettings: () => void
   children: React.ReactNode
-  customTitle?: React.ReactNode
   additionalRightControls?: React.ReactNode
 }
 
@@ -21,7 +20,6 @@ export function GameHeader({
   gameState,
   onOpenSettings,
   children,
-  customTitle,
   additionalRightControls,
 }: GameHeaderProps) {
   return (
