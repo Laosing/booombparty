@@ -92,7 +92,9 @@ export default function LobbyView() {
               <input
                 value={newRoomName}
                 onChange={(e) => {
-                  setNewRoomName(e.target.value.substring(0, 4))
+                  setNewRoomName(
+                    e.target.value.toLocaleLowerCase().substring(0, 4),
+                  )
                 }}
                 placeholder="Room (4 chars)"
                 className="uppercase placeholder:capitalize placeholder:tracking-normal tracking-widest"
