@@ -144,4 +144,11 @@ export class DictionaryManager {
     if (SHARED_WORDS.length === 0) return false
     return SHARED_WORD_SET.has(word.trim().toUpperCase())
   }
+
+  // Test Helper
+  static _reset() {
+    SHARED_WORDS = []
+    SHARED_WORD_SET = new Set()
+    LOADING_PROMISE = null
+  }
 }

@@ -131,7 +131,14 @@ export class MockRoom implements Party.Room {
     this.id = id
   }
 
-  broadcast = vi.fn()
+  broadcast = vi.fn(
+    (msg: string | ArrayBuffer | ArrayBufferView, without?: string[]) => {
+      for (const conn of this.connections.values()) {
+        if (without && without.includes(conn.id)) continue
+        if (typeof msg === "string") conn.send(msg)
+      }
+    },
+  )
 
   getConnections = <TState = unknown>(
     tag?: string,

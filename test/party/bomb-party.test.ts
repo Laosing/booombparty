@@ -1,0 +1,267 @@
+import { describe, it, expect, beforeEach, vi } from "vitest"
+import Server from "../../party/server"
+import {
+  MockRoom,
+  MockConnection,
+  createMockConnectionContext,
+  MockStorage,
+} from "../mocks/party"
+import {
+  GameState,
+  GameMode,
+  BombPartyClientMessageType,
+  ServerMessageType,
+} from "../../shared/types"
+import { BombPartyGame } from "../../party/games/bomb-party"
+
+// Mock DictionaryManager
+vi.mock("../../party/dictionary", () => ({
+  DictionaryManager: class {
+    load = vi.fn().mockResolvedValue({ success: true })
+    // isValid returns true if word contains syllable 'SYL'
+    isValid = vi.fn().mockImplementation((word: string, syllable: string) => {
+      if (!word.toLowerCase().includes(syllable.toLowerCase())) {
+        return { valid: false, reason: "Missing syllable" }
+      }
+      return { valid: true }
+    })
+    getRandomSyllable = vi.fn().mockReturnValue("TEST")
+    isWordValid = vi.fn().mockImplementation(() => true)
+  },
+}))
+
+describe("Bomb Party Game Logic", () => {
+  let room: MockRoom
+  let server: Server
+  let game: BombPartyGame
+
+  beforeEach(() => {
+    room = new MockRoom("test")
+    // Ensure GameMode is BOMB_PARTY
+    room.storage.put("gameMode", GameMode.BOMB_PARTY)
+    server = new Server(room as any)
+    server.gameMode = GameMode.BOMB_PARTY
+
+    // Silence logger
+    server.logger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    } as any
+
+    // Server usually instantiates game on first connect if not present,
+    // but we can manually instantiate it for unit testing logic if we carefully mock the context
+    // However, simplest way is to simulate a connection which triggers instantiation
+  })
+
+  const joinPlayer = async (id: string) => {
+    const conn = new MockConnection(id)
+    room.connections.set(id, conn as any)
+    await server.onConnect(conn as any, createMockConnectionContext())
+    return conn
+  }
+
+  it("should start game when admin requests", async () => {
+    const host = await joinPlayer("host")
+    const p2 = await joinPlayer("p2")
+
+    expect(server.gameState).toBe(GameState.LOBBY)
+
+    await server.onMessage(
+      JSON.stringify({
+        type: BombPartyClientMessageType.START_GAME,
+      }),
+      host as any,
+    )
+
+    expect(server.gameState).toBe(GameState.PLAYING)
+    expect((server.activeGame as BombPartyGame).activePlayerId).toBeDefined()
+    expect((server.activeGame as BombPartyGame).round).toBe(1)
+    // Should have started timer
+    expect((server.activeGame as BombPartyGame).timer).toBeGreaterThan(0)
+  })
+
+  it("should handle valid word submission", async () => {
+    vi.useFakeTimers()
+    // 1. Setup Game
+    const host = await joinPlayer("host")
+    await joinPlayer("p2")
+    await server.onMessage(
+      JSON.stringify({ type: BombPartyClientMessageType.START_GAME }),
+      host as any,
+    )
+
+    const game = server.activeGame as BombPartyGame
+    const activeId = game.activePlayerId!
+    expect(activeId).toBeDefined()
+
+    // Mock syllable to be "TEST" (from our mock above)
+    game.currentSyllable = "TEST"
+
+    const activeConn = room.connections.get(activeId)
+
+    // Advance time to pass "too fast" check (50ms)
+    vi.advanceTimersByTime(100)
+
+    // 2. Submit Valid Word containing "TEST"
+    await server.onMessage(
+      JSON.stringify({
+        type: BombPartyClientMessageType.SUBMIT_WORD,
+        word: "TESTING",
+      }),
+      activeConn as any,
+    )
+
+    // 3. Verify success
+    // Should have moved to next player
+    expect(game.activePlayerId).not.toBe(activeId)
+    // Word should be added to used words
+    expect(game.usedWords.has("testing")).toBe(true)
+    // Valid word message broadcast?
+    expect(activeConn?.send).toHaveBeenCalledWith(
+      expect.stringContaining(ServerMessageType.VALID_WORD),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("should reject invalid word (missing syllable)", async () => {
+    const host = await joinPlayer("host")
+    await server.onMessage(
+      JSON.stringify({ type: BombPartyClientMessageType.START_GAME }),
+      host as any,
+    )
+
+    const game = server.activeGame as BombPartyGame
+    const activeId = game.activePlayerId!
+    const activeConn = room.connections.get(activeId)!
+
+    game.currentSyllable = "ABC" // Syllable
+
+    await server.onMessage(
+      JSON.stringify({
+        type: BombPartyClientMessageType.SUBMIT_WORD,
+        word: "XYZ", // Does not contain ABC
+      }),
+      activeConn as any,
+    )
+
+    // Should not change turn
+    expect(game.activePlayerId).toBe(activeId)
+    // Should send Error
+    expect(activeConn.send).toHaveBeenCalledWith(
+      expect.stringContaining('"type":"ERROR"'),
+    )
+  })
+
+  it("should handle explosion (timer expiry)", async () => {
+    const host = await joinPlayer("host")
+    await joinPlayer("p2") // Add second player so turn can rotate
+    await server.onMessage(
+      JSON.stringify({ type: BombPartyClientMessageType.START_GAME }),
+      host as any,
+    )
+
+    const game = server.activeGame as BombPartyGame
+    const activeId = game.activePlayerId!
+    const player = server.players.get(activeId)!
+    const initialLives = player.lives
+
+    // Manually trigger explosion logic (simulating tick)
+    game.handleExplosion()
+
+    expect(player.lives).toBe(initialLives - 1)
+    // Should move to next turn
+    expect(game.activePlayerId).not.toBe(activeId)
+  })
+
+  it("should end game when only 1 player remains", async () => {
+    const host = await joinPlayer("host")
+    await joinPlayer("p2")
+    await server.onMessage(
+      JSON.stringify({ type: BombPartyClientMessageType.START_GAME }),
+      host as any,
+    )
+
+    const game = server.activeGame as BombPartyGame
+
+    // Kill p2
+    const p2 = server.players.get("p2")!
+    p2.lives = 0
+    p2.isAlive = false
+
+    // Trigger check condition
+    game.checkWinCondition()
+
+    expect(server.gameState).toBe(GameState.ENDED)
+    expect(game.winnerId).toBe("host")
+  })
+
+  it("should award bonus letter for long words", async () => {
+    vi.useFakeTimers()
+    const host = await joinPlayer("host")
+    await joinPlayer("p2")
+    await server.onMessage(
+      JSON.stringify({ type: BombPartyClientMessageType.START_GAME }),
+      host as any,
+    )
+
+    const game = server.activeGame as BombPartyGame
+    const activeId = game.activePlayerId!
+    const activeConn = room.connections.get(activeId)
+    const player = server.players.get(activeId)!
+
+    // Setup: ensure bonus length is reachable
+    game.bonusWordLength = 5
+    game.currentSyllable = "TEST"
+
+    // Advance time for bot check
+    vi.advanceTimersByTime(100)
+
+    // Submit "TESTING" (Length 7 > 5)
+    await server.onMessage(
+      JSON.stringify({
+        type: BombPartyClientMessageType.SUBMIT_WORD,
+        word: "TESTING",
+      }),
+      activeConn as any,
+    )
+
+    // Verify Player got a bonus letter
+    expect(player.usedLetters.length).toBeGreaterThan(0)
+    // Should have broadcast BONUS
+    expect(server.room.broadcast).toHaveBeenCalledWith(
+      expect.stringContaining(ServerMessageType.BONUS),
+    )
+
+    vi.useRealTimers()
+  })
+
+  it("should activate hard mode after X rounds", async () => {
+    const host = await joinPlayer("host")
+    await joinPlayer("p2")
+    await server.onMessage(
+      JSON.stringify({ type: BombPartyClientMessageType.START_GAME }),
+      host as any,
+    )
+
+    const game = server.activeGame as BombPartyGame
+
+    // Setup Hard Mode start
+    game.hardModeStartRound = 3
+    game.maxTimer = 20
+
+    // Advance to round 4
+    game.round = 4
+
+    // Trigger new turn to reset timer
+    game.nextTurn(false)
+
+    // In hard mode, timer should be random between 10 (max/2) and 20 (max)
+    expect(game.timer).toBeGreaterThanOrEqual(10)
+    expect(game.timer).toBeLessThanOrEqual(20)
+
+    // Run it multiple times to ensure randomness if possible, but one check validates logic path
+  })
+})
