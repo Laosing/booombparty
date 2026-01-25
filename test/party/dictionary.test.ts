@@ -23,7 +23,7 @@ describe("DictionaryManager", () => {
   it("should load dictionary successfully", async () => {
     // Mock fetch
     const mockText = "APPLE\nBANANA\nCHERRY\nDATE\nELDERBERRY\nTEST\nTESTING"
-    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       text: async () => mockText,
       body: null, // force fallback to text() path
@@ -44,7 +44,7 @@ describe("DictionaryManager", () => {
     const dict = new DictionaryManager()
 
     const mockText = "TEST\nTESTING\nTOAST"
-    vi.spyOn(global, "fetch").mockResolvedValue({
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       text: async () => mockText,
       body: null,
@@ -84,7 +84,7 @@ describe("DictionaryManager", () => {
       "TACTIC",
     ].join("\n")
 
-    vi.spyOn(global, "fetch").mockResolvedValue({
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       text: async () => mockWords,
       body: null,
@@ -101,7 +101,7 @@ describe("DictionaryManager", () => {
     const dict = new DictionaryManager()
 
     const mockWords = ["CAT", "DOG", "BIRD", "FISH"].join("\n")
-    vi.spyOn(global, "fetch").mockResolvedValue({
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       text: async () => mockWords,
       body: null,
