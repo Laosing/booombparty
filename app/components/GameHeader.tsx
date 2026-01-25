@@ -1,4 +1,11 @@
-import { CopyIcon, SettingsIcon } from "./Icons"
+import {
+  CopyIcon,
+  DoorIcon,
+  HouseIcon,
+  LeftIcon,
+  LockIcon,
+  SettingsIcon,
+} from "./Icons"
 import { Logo } from "./Logo"
 import { GameState } from "../../shared/types"
 import React from "react"
@@ -29,7 +36,7 @@ export function GameHeader({
           onClick={() => (window.location.href = "/")}
           className="btn btn-ghost btn-sm"
         >
-          ← Lobby
+          <LeftIcon /> Lobby
         </button>
 
         <Logo name={room} />
@@ -39,11 +46,12 @@ export function GameHeader({
           {(gameState === GameState.LOBBY || gameState === GameState.ENDED) &&
             isAdmin && (
               <button
-                className="btn btn-ghost btn-sm btn-circle"
+                className="btn btn-sm btn-ghost"
                 onClick={onOpenSettings}
                 title="Settings"
               >
                 <SettingsIcon />
+                Settings
               </button>
             )}
           {additionalRightControls}
@@ -51,15 +59,14 @@ export function GameHeader({
       </div>
 
       <div className="text-sm opacity-70 mb-4">
-        Room:{" "}
         <button
-          className="font-mono text-lg badge badge-neutral tracking-widest hover:badge-primary transition-colors cursor-pointer gap-2 font-bold"
+          className="btn btn-sm badge badge-neutral hover:badge-primary transition-colors"
           onClick={() => navigator.clipboard.writeText(window.location.href)}
           title="Copy room link"
         >
-          {room.toUpperCase()}
-          <CopyIcon />
-          {password && " 🔒"}
+          <HouseIcon />
+          Room: <span className="tracking-widest">{room.toUpperCase()}</span>
+          {password && <LockIcon />}
         </button>
       </div>
 

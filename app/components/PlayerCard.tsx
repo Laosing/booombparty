@@ -1,6 +1,6 @@
 import clsx from "clsx"
 import { CustomAvatar } from "./Logo"
-import { EditIcon } from "./Icons"
+import { HeartIcon, EditIcon } from "./Icons"
 import type { Player } from "../../shared/types"
 
 interface PlayerCardProps {
@@ -8,6 +8,7 @@ interface PlayerCardProps {
   isMe: boolean
   isAdmin: boolean
   isActive?: boolean
+  isPlaying?: boolean
   onKick?: (playerId: string) => void
   onEditName?: () => void
   showLives?: boolean
@@ -20,6 +21,7 @@ export function PlayerCard({
   isMe,
   isAdmin,
   isActive,
+  isPlaying,
   onKick,
   onEditName,
   showLives = true,
@@ -80,9 +82,11 @@ export function PlayerCard({
               </button>
             )}
           </h3>
-          {showLives && (
-            <div className="flex gap-1 justify-center text-error mt-1 text-sm h-5">
-              {"❤".repeat(Math.max(0, player.lives))}
+          {showLives && isPlaying && (
+            <div className="flex gap-1 justify-center text-error mt-1 text-sm h-5 items-center">
+              {Array.from({ length: Math.max(0, player.lives) }).map((_, i) => (
+                <HeartIcon key={i} />
+              ))}
             </div>
           )}
           {showWins && (

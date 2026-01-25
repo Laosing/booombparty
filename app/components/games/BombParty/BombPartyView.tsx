@@ -50,14 +50,14 @@ export default function BombPartyView({
   const {
     currentSyllable,
     activePlayerId,
-    timer = 10,
-    maxTimer = 10,
-    startingLives = 2,
-    syllableChangeThreshold = 2,
-    bonusWordLength = 2,
+    timer,
+    maxTimer,
+    startingLives,
+    syllableChangeThreshold,
+    bonusWordLength,
     dictionaryLoaded,
-    round = 1,
-    hardModeStartRound = 5,
+    round,
+    hardModeStartRound,
     winnerId,
   } = serverState
 
@@ -307,6 +307,7 @@ export default function BombPartyView({
             isActive={
               gameState === GameState.PLAYING && p.id === activePlayerId
             }
+            isPlaying={gameState === GameState.PLAYING}
             onKick={onKick}
             onEditName={onEditName}
           >

@@ -5,6 +5,7 @@ import { GameMode, ServerMessageType } from "../../shared/types"
 import { getGameModeName, host } from "../utils"
 import { CustomAvatar, Logo } from "./Logo"
 import { Modal } from "./Modal"
+import { GameIcon, HouseIcon, LockIcon } from "./Icons"
 
 export default function LobbyView() {
   const navigate = useNavigate()
@@ -84,34 +85,38 @@ export default function LobbyView() {
           </div>
         )}
 
-        <form
-          onSubmit={handleCreate}
-          className="my-8 flex flex-col sm:flex-row gap-2 items-center justify-center"
-        >
-          <div className="flex flex-col gap-1 w-full relative">
-            <input
-              value={newRoomName}
-              onChange={(e) => {
-                const val = e.target.value.toLowerCase().replace(/[^a-z]/g, "")
-                setNewRoomName(val.substring(0, 4))
-              }}
-              placeholder="Room (4 chars)"
-              className="input input-bordered w-full text-center font-mono uppercase placeholder:normal-case"
-              maxLength={4}
-            />
-            {newRoomName.length > 0 && newRoomName.length < 4 && (
-              <span className="text-xs text-error absolute -bottom-5 left-0 right-0">
-                Must be 4 characters
-              </span>
-            )}
+        <form onSubmit={handleCreate} className="join justify-center mt-8">
+          <div>
+            <label className="input w-full validator">
+              <HouseIcon />
+              <input
+                value={newRoomName}
+                onChange={(e) => {
+                  setNewRoomName(e.target.value.substring(0, 4))
+                }}
+                placeholder="Room (4 chars)"
+                className=""
+                maxLength={4}
+                minLength={4}
+                required
+                pattern="[a-z]{4}"
+              />
+            </label>
+            <p className="validator-hint">Must be 4 characters</p>
           </div>
-          <input
-            value={roomPassword}
-            onChange={(e) => setRoomPassword(e.target.value)}
-            placeholder="Password (Optional)"
-            type="password"
-            className="input input-bordered w-full text-center"
-          />
+
+          <div>
+            <label className="input w-full">
+              <LockIcon />
+              <input
+                value={roomPassword}
+                onChange={(e) => setRoomPassword(e.target.value)}
+                placeholder="Password (Optional)"
+                type="password"
+                className=""
+              />
+            </label>
+          </div>
           <button
             type="submit"
             className="btn btn-primary"
@@ -124,7 +129,9 @@ export default function LobbyView() {
         <div className="flex justify-center mb-8">
           <div className="form-control w-full max-w-xs">
             <fieldset className="fieldset">
-              <legend className="fieldset-legend text-lg">Game Mode</legend>
+              <legend className="fieldset-legend text-lg">
+                <GameIcon /> Game Mode
+              </legend>
               <select
                 className="select select-bordered w-full"
                 value={selectedMode}
@@ -177,7 +184,7 @@ export default function LobbyView() {
                 </figure>
                 <div className="card-body">
                   <h2 className="card-title uppercase font-bold">
-                    {r.id} {r.isPrivate && <span>🔒</span>}
+                    {r.id} {r.isPrivate && <LockIcon />}
                   </h2>
                   <div className="card-actions">
                     <div className="badge badge-primary">
