@@ -328,6 +328,7 @@ export default class Server implements Party.Server {
     if (this.players.size === 0) {
       this.activeGame?.dispose()
       this.activeGame = null
+      this.gameState = GameState.LOBBY
       this.password = undefined // Reset password
       await this.room.storage.deleteAll()
       this.logger.info("Room empty. Storage and state cleared.")

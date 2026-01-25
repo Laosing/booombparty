@@ -29,13 +29,21 @@ export function Modal({
     }
   }, [isOpen])
 
+  const triggerClose = () => {
+    ref.current?.close()
+    // wait for animation to finish
+    setTimeout(() => {
+      onClose()
+    }, 200)
+  }
+
   return (
-    <dialog ref={ref} className="modal" onClose={onClose}>
+    <dialog ref={ref} className="modal" onClose={triggerClose}>
       <div className="modal-box">
         {title && <h3 className="text-xl font-bold mb-4">{title}</h3>}
         {children}
         <div className="modal-action">
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" onClick={triggerClose}>
             Cancel
           </button>
           <button
@@ -50,7 +58,7 @@ export function Modal({
         </div>
       </div>
       <form method="dialog" className="modal-backdrop">
-        <button onClick={onClose}>close</button>
+        <button onClick={triggerClose}>close</button>
       </form>
     </dialog>
   )
