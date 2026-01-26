@@ -1,40 +1,58 @@
 # 🎈 drewbox
 
-Welcome to the party, pal!
+drewbox is a collection of multiplayer games to play with your friends! Built with **React** and **PartyKit**, it offers real-time fun with zero setup.
 
-This is a [Partykit](https://partykit.io) project, which lets you create real-time collaborative applications with minimal coding effort.
+## 🎮 Games Collection
 
-This is the **React starter** which pairs a PartyKit server with a React client.
+Currently featuring:
 
-Refer to our docs for more information: https://github.com/partykit/partykit/blob/main/README.md. For more help, reach out to us on [Discord](https://discord.gg/g5uqHQJc3z), [GitHub](https://github.com/partykit/partykit), or [Twitter](https://twitter.com/partykit_io).
+- **BombParty**: A fast-paced word game where you must type a word containing a specific syllable before the bomb explodes!
+- **WordChain**: Link words together where the next word must start with the last letter of the previous word.
+- **Wordle**: A multiplayer take on the classic word guessing game.
 
-## Usage
+## 🛠 Tech Stack
 
-You can start developing by running `npm run dev` and opening [http://localhost:1999](http://localhost:1999) in your browser. When you're ready, you can deploy your application on to the PartyKit cloud with `npm run deploy`.
+- **[PartyKit](https://partykit.io)**: For real-time serverless WebSocket infrastructure.
+- **[React](https://react.dev)**: For the user interface.
+- **[Vite](https://vitejs.dev)**: For fast development and building.
+- **[DaisyUI](https://daisyui.com)** + **[Tailwind CSS](https://tailwindcss.com)**: For styling and themes.
 
-## Finding your way around
+## 🚀 Getting Started
 
-[`party/server.ts`](./party/server.ts) is the server-side code, which is responsible for handling WebSocket events and HTTP requests.
+### Development
 
-It implements a simple counter that can be incremented by any connected client. The latest state is broadcast to all connected clients.
+To start the development environment locally:
 
-> [!NOTE]
-> The full Server API is available at [Party.Server in the PartyKit docs](https://docs.partykit.io/reference/partyserver-api/)
+1. Install dependencies:
 
-[`app/client.tsx`](./src/client.ts) is the entrypoint to client-side code.
+   ```bash
+   pnpm install
+   ```
 
-[`app/components/Counter.tsx`](./src/components/Counter.tsx) connects to the server, sends `increment` events on the WebSocket, and listens for updates.
+2. Run the development server (client + PartyKit server):
 
-> [!NOTE]
-> The client-side reference can be found at [PartySocket in the PartyKit docs](https://docs.partykit.io/reference/partysocket-api/)
+   ```bash
+   pnpm run dev
+   ```
 
-As a client-side React app, the app could be hosted every. During development, for convenience, the server serves the client-side code as well.
+3. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-This is achieved with the optional `serve` property in the [`partykit.json`](./partykit.json) config file.
+> Note: The PartyKit server runs on port 1999, and the Vite client runs on port 5173.
 
-> [!NOTE]
-> Learn about PartyKit config under [Configuration in the PartyKit docs](https://docs.partykit.io/reference/partykit-configuration/)
+### Deployment
 
-## Next Steps
+To deploy your application to the PartyKit cloud:
 
-Learn about deploying PartyKit applications in the [Deployment guide of the PartyKit docs](https://docs.partykit.io/guides/deploying-your-partykit-server/).
+```bash
+pnpm run deploy
+```
+
+This command builds the client and deploys the server code to PartyKit.
+
+## 📂 Project Structure
+
+- **`app/`**: Client-side React application code.
+  - **`components/`**: React components, including game implementations.
+- **`party/`**: Server-side PartyKit code.
+  - **`games/`**: Game logic handlers running on the server.
+- **`shared/`**: Types and utilities shared between client and server.
