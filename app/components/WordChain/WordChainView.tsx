@@ -6,12 +6,12 @@ import {
   type Player,
   ServerMessageType,
   type WordChainServerState,
-} from "../../../../shared/types"
+} from "../../../shared/types"
 import clsx from "clsx"
-import { GameHeader } from "../../GameHeader"
+import { GameHeader } from "../GameHeader"
 import PartySocket from "partysocket"
-import { PlayerCard } from "../../PlayerCard"
-import { LobbyGameSettingsBadges } from "../../LobbyGameSettingsBadges"
+import { PlayerCard } from "../PlayerCard"
+import { LobbyGameSettingsBadges } from "../LobbyGameSettingsBadges"
 
 interface WordChainViewProps {
   socket: PartySocket

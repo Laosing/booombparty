@@ -3,9 +3,9 @@ import { GameMode } from "../../shared/types"
 import { useGameStore } from "../store/gameStore"
 
 // Lazy load game views
-const BombPartyView = lazy(() => import("./games/BombParty/BombPartyView"))
-const WordleView = lazy(() => import("./games/Wordle/WordleView"))
-const WordChainView = lazy(() => import("./games/WordChain/WordChainView"))
+const BombPartyView = lazy(() => import("./BombParty/BombPartyView"))
+const WordleView = lazy(() => import("./Wordle/WordleView"))
+const WordChainView = lazy(() => import("./WordChain/WordChainView"))
 
 interface ActiveGameViewProps {
   room: string

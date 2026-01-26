@@ -2,13 +2,9 @@ import { Suspense, lazy } from "react"
 import { GAME_CONFIG, GameMode } from "../../shared/types"
 
 // Lazy load game settings forms
-const BombPartySettings = lazy(
-  () => import("./games/BombParty/BombPartySettings"),
-)
-const WordleSettings = lazy(() => import("./games/Wordle/WordleSettings"))
-const WordChainSettings = lazy(
-  () => import("./games/WordChain/WordChainSettings"),
-)
+const BombPartySettings = lazy(() => import("./BombParty/BombPartySettings"))
+const WordleSettings = lazy(() => import("./Wordle/WordleSettings"))
+const WordChainSettings = lazy(() => import("./WordChain/WordChainSettings"))
 
 interface GameSettingsFormProps {
   gameMode: GameMode

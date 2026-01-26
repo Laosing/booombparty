@@ -8,11 +8,11 @@ import {
   type Guess,
   type GuessResult,
   type WordleServerState,
-} from "../../../../shared/types"
-import { GameHeader } from "../../GameHeader"
+} from "../../../shared/types"
+import { GameHeader } from "../GameHeader"
 import clsx from "clsx"
-import { PlayerCard } from "../../PlayerCard"
-import { LobbyGameSettingsBadges } from "../../LobbyGameSettingsBadges"
+import { PlayerCard } from "../PlayerCard"
+import { LobbyGameSettingsBadges } from "../LobbyGameSettingsBadges"
 
 interface WordleViewProps {
   socket: PartySocket

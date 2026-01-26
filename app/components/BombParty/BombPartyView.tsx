@@ -6,12 +6,12 @@ import {
   type Player,
   ServerMessageType,
   type BombPartyServerState,
-} from "../../../../shared/types"
-import { GameHeader } from "../../GameHeader"
-import { WordHighlight } from "../../WordHighlight"
-import { PlayerCard } from "../../PlayerCard"
+} from "../../../shared/types"
+import { GameHeader } from "../GameHeader"
+import { WordHighlight } from "../WordHighlight"
+import { PlayerCard } from "../PlayerCard"
 import clsx from "clsx"
-import { LobbyGameSettingsBadges } from "../../LobbyGameSettingsBadges"
+import { LobbyGameSettingsBadges } from "../LobbyGameSettingsBadges"
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 

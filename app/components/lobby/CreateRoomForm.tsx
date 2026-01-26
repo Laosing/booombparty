@@ -15,7 +15,6 @@ export default function CreateRoomForm() {
   const setNewRoomName = useLobbyStore((state) => state.setNewRoomName)
   const setRoomPassword = useLobbyStore((state) => state.setRoomPassword)
   const setSelectedMode = useLobbyStore((state) => state.setSelectedMode)
-  const resetInputs = useLobbyStore((state) => state.resetInputs)
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
