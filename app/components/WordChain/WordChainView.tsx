@@ -49,6 +49,9 @@ export default function WordChainView({
     timer,
     maxTimer,
     startingLives,
+    round,
+    minLength,
+    hardModeStartRound,
   } = serverState
 
   const isMyTurn = activePlayerId === socket.id
@@ -141,7 +144,11 @@ export default function WordChainView({
                 the previous word.
               </p>
               <LobbyGameSettingsBadges
-                settings={[`Timer: ${maxTimer}s`, `Lives: ${startingLives}`]}
+                settings={[
+                  `Timer: ${maxTimer}s`,
+                  `Lives: ${startingLives}`,
+                  `Hard mode after round: ${hardModeStartRound}`,
+                ]}
               />
 
               {isAdmin && players.length > 0 && (
@@ -166,6 +173,18 @@ export default function WordChainView({
               <div className="text-3xl md:text-5xl font-black mb-4">
                 <span className="opacity-50">{currentWord.slice(0, -1)}</span>
                 <span className="text-primary">{lastChar}</span>
+              </div>
+
+              <div className="flex gap-4 text-sm font-bold opacity-80">
+                <div className="badge badge-lg">Round {round}</div>
+                <div
+                  className={clsx("badge badge-lg", {
+                    "badge-secondary": minLength > 3,
+                    "badge-outline": minLength <= 3,
+                  })}
+                >
+                  Min Length: {minLength}
+                </div>
               </div>
 
               <div className="w-full max-w-sm">

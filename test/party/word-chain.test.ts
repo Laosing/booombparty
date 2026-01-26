@@ -8,8 +8,8 @@ import {
 import {
   GameState,
   GameMode,
-  WordChainClientMessageType,
   ServerMessageType,
+  GAME_CONFIG,
 } from "../../shared/types"
 import { WordChainGame } from "../../party/games/word-chain"
 
@@ -48,65 +48,46 @@ describe("Word Chain Game Logic", () => {
   }
 
   it("should start game with initial word", async () => {
-    const host = await joinPlayer("host")
+    await joinPlayer("host")
 
-    await server.onMessage(
-      JSON.stringify({
-        type: WordChainClientMessageType.START_GAME,
-      }),
-      host as any,
-    )
+    // Direct instantiation and method calling for simpler testing
+    const game = new WordChainGame(server)
+    server.activeGame = game
+
+    // Action
+    game.requestStartGame("host")
 
     expect(server.gameState).toBe(GameState.PLAYING)
-    const game = server.activeGame as WordChainGame
     expect(game.currentWord).toBe("START")
   })
 
   it("should accept valid chain word", async () => {
     const host = await joinPlayer("host")
     await joinPlayer("p2")
-    await server.onMessage(
-      JSON.stringify({ type: WordChainClientMessageType.START_GAME }),
-      host as any,
-    )
+    const game = new WordChainGame(server)
+    server.activeGame = game
+    game.requestStartGame("host")
 
-    const game = server.activeGame as WordChainGame
     game.currentWord = "TEST"
 
-    const activeConn = room.connections.get(game.activePlayerId!)
-
-    // Must start with T
-    await server.onMessage(
-      JSON.stringify({
-        type: WordChainClientMessageType.SUBMIT_WORD,
-        word: "TIGER",
-      }),
-      activeConn as any,
-    )
+    // Action
+    game.submitWord(game.activePlayerId!, "TIGER")
 
     expect(game.currentWord).toBe("TIGER")
     expect(game.usedWords.has("TIGER")).toBe(true)
   })
 
   it("should reject invalid start letter", async () => {
-    const host = await joinPlayer("host")
-    await server.onMessage(
-      JSON.stringify({ type: WordChainClientMessageType.START_GAME }),
-      host as any,
-    )
+    await joinPlayer("host")
+    const game = new WordChainGame(server)
+    server.activeGame = game
+    game.requestStartGame("host")
 
-    const game = server.activeGame as WordChainGame
     game.currentWord = "TEST"
     const activeConn = room.connections.get(game.activePlayerId!)
 
-    // Starts with A, expected T
-    await server.onMessage(
-      JSON.stringify({
-        type: WordChainClientMessageType.SUBMIT_WORD,
-        word: "APPLE",
-      }),
-      activeConn as any,
-    )
+    // Action: Starts with A, expected T
+    game.submitWord(game.activePlayerId!, "APPLE")
 
     expect(game.currentWord).toBe("TEST") // Should not change
     expect(activeConn?.send).toHaveBeenCalledWith(
@@ -115,29 +96,109 @@ describe("Word Chain Game Logic", () => {
   })
 
   it("should reject repeated word", async () => {
-    const host = await joinPlayer("host")
-    await server.onMessage(
-      JSON.stringify({ type: WordChainClientMessageType.START_GAME }),
-      host as any,
-    )
+    await joinPlayer("host")
+    const game = new WordChainGame(server)
+    server.activeGame = game
+    game.requestStartGame("host")
 
-    const game = server.activeGame as WordChainGame
     game.currentWord = "TEST"
     game.usedWords.add("TIGER") // Simulate "TIGER" was used
 
     const activeConn = room.connections.get(game.activePlayerId!)
 
-    await server.onMessage(
-      JSON.stringify({
-        type: WordChainClientMessageType.SUBMIT_WORD,
-        word: "TIGER",
-      }),
-      activeConn as any,
-    )
+    // Action
+    game.submitWord(game.activePlayerId!, "TIGER")
 
     expect(game.currentWord).toBe("TEST")
     expect(activeConn?.send).toHaveBeenCalledWith(
       expect.stringContaining("Word already used"),
     )
+  })
+
+  // Hard Mode Tests
+  describe("Hard Mode", () => {
+    it("should initialize with default hard mode settings", async () => {
+      await joinPlayer("host")
+      const game = new WordChainGame(server)
+      server.activeGame = game
+
+      game.requestStartGame("host")
+
+      expect(game.round).toBe(1)
+      expect(game.minLength).toBe(3)
+      expect(game.hardModeStartRound).toBe(
+        GAME_CONFIG.WORD_CHAIN.HARD_MODE_START.DEFAULT,
+      )
+    })
+
+    it("should reject words shorter than minLength", async () => {
+      await joinPlayer("host")
+      const game = new WordChainGame(server)
+      server.activeGame = game
+      game.requestStartGame("host")
+
+      game.minLength = 5
+      game.currentWord = "TEST"
+
+      const activeConn = room.connections.get(game.activePlayerId!)
+
+      // Action: Valid start letter, valid dictionary word, but too short
+      game.submitWord(game.activePlayerId!, "TINY")
+
+      expect(game.currentWord).toBe("TEST")
+      expect(activeConn?.send).toHaveBeenCalledWith(
+        expect.stringContaining("at least 5 letters"),
+      )
+    })
+
+    it("should increment round after all players have played", async () => {
+      const p1 = await joinPlayer("p1")
+      const p2 = await joinPlayer("p2")
+
+      const game = new WordChainGame(server)
+      server.activeGame = game
+      game.requestStartGame("p1")
+
+      game.currentWord = "START"
+      expect(game.round).toBe(1)
+      expect(game.playersPlayedInRound.size).toBe(1) // Initial player logic adds active player
+
+      // Determine active player order
+      const firstPlayerId = game.activePlayerId!
+      const secondPlayerId = firstPlayerId === "p1" ? "p2" : "p1"
+
+      // Player 1 plays
+      game.submitWord(firstPlayerId, "TIGER")
+
+      expect(game.playersPlayedInRound.has(firstPlayerId)).toBe(true)
+      expect(game.round).toBe(1) // Round shouldn't increment yet
+
+      // Player 2 plays
+      expect(game.activePlayerId).toBe(secondPlayerId)
+
+      game.submitWord(secondPlayerId, "ROBOT")
+
+      expect(game.activePlayerId).toBe(firstPlayerId)
+      expect(game.round).toBe(2)
+      expect(game.playersPlayedInRound.size).toBe(1)
+    })
+
+    it("should increase minLength when hard mode threshold is reached", async () => {
+      const p1 = await joinPlayer("p1")
+      const game = new WordChainGame(server)
+      server.activeGame = game
+      game.requestStartGame("p1")
+
+      game.hardModeStartRound = 2
+      game.round = 1
+      game.playersPlayedInRound.add(p1.id)
+
+      // Force next turn to verify round increment logic directly
+      game.activePlayerId = p1.id
+      game.nextTurn()
+
+      expect(game.round).toBe(2)
+      expect(game.minLength).toBe(4)
+    })
   })
 })

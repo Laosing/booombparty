@@ -12,12 +12,16 @@ import type { WordChainClientMessage } from "../../shared/types"
 export class WordChainGame extends BaseGame {
   currentWord: string = ""
   usedWords: Set<string> = new Set()
+  playersPlayedInRound: Set<string> = new Set()
 
   winnerId: string | null = null
   activePlayerId: string | null = null
   timer: number = 0
   maxTimer: number = GAME_CONFIG.WORD_CHAIN.TIMER.DEFAULT
   startingLives: number = GAME_CONFIG.WORD_CHAIN.LIVES.DEFAULT
+  hardModeStartRound: number = GAME_CONFIG.WORD_CHAIN.HARD_MODE_START.DEFAULT
+  round: number = 1
+  minLength: number = 3
 
   private tickInterval: ReturnType<typeof setTimeout> | null = null
   private nextTickTime: number = 0
@@ -41,6 +45,9 @@ export class WordChainGame extends BaseGame {
 
     this.server.gameState = GameState.PLAYING
     this.usedWords = new Set()
+    this.round = 1
+    this.minLength = 3
+    this.playersPlayedInRound.clear()
 
     // Reset players
     for (const p of this.players.values()) {
@@ -70,64 +77,85 @@ export class WordChainGame extends BaseGame {
       const data = JSON.parse(message) as WordChainClientMessage
       switch (data.type) {
         case WordChainClientMessageType.START_GAME:
-          if (
-            this.players.get(sender.id)?.isAdmin &&
-            (this.server.gameState === GameState.LOBBY ||
-              this.server.gameState === GameState.ENDED)
-          ) {
-            this.onStart()
-          }
+          this.requestStartGame(sender.id)
           break
         case WordChainClientMessageType.STOP_GAME:
-          if (
-            this.players.get(sender.id)?.isAdmin &&
-            this.server.gameState === GameState.PLAYING
-          ) {
-            this.endGame()
-          }
+          this.requestStopGame(sender.id)
           break
         case WordChainClientMessageType.SUBMIT_WORD:
-          if (
-            this.server.gameState === GameState.PLAYING &&
-            this.activePlayerId === sender.id
-          ) {
-            this.handleGuess(sender.id, data.word)
-          }
+          this.submitWord(sender.id, data.word)
           break
         case WordChainClientMessageType.UPDATE_TYPING:
-          if (
-            this.server.gameState === GameState.PLAYING &&
-            this.activePlayerId === sender.id
-          ) {
-            this.broadcast({
-              type: ServerMessageType.TYPING_UPDATE,
-              text: data.text,
-            })
-          }
+          this.updateTyping(sender.id, data.text)
           break
         case WordChainClientMessageType.UPDATE_SETTINGS:
-          if (this.players.get(sender.id)?.isAdmin) {
-            const result = WordChainSettingsSchema.safeParse(data)
-            if (result.success) {
-              const settings = result.data
-              if (settings.maxTimer !== undefined)
-                this.maxTimer = settings.maxTimer
-              if (settings.startingLives !== undefined) {
-                this.startingLives = settings.startingLives
-                console.log("Updated startingLives:", this.startingLives)
-              }
-              if (settings.chatEnabled !== undefined)
-                this.chatEnabled = settings.chatEnabled
-              if (settings.gameLogEnabled !== undefined)
-                this.gameLogEnabled = settings.gameLogEnabled
-
-              this.server.broadcastState()
-            }
-          }
+          this.updateSettings(sender.id, data)
           break
       }
     } catch (e) {
       console.error(e)
+    }
+  }
+
+  // Action Methods (Public for testing and internal use)
+
+  public requestStartGame(playerId: string) {
+    const player = this.players.get(playerId)
+    if (
+      player?.isAdmin &&
+      (this.server.gameState === GameState.LOBBY ||
+        this.server.gameState === GameState.ENDED)
+    ) {
+      this.onStart()
+    }
+  }
+
+  public requestStopGame(playerId: string) {
+    const player = this.players.get(playerId)
+    if (player?.isAdmin && this.server.gameState === GameState.PLAYING) {
+      this.endGame()
+    }
+  }
+
+  public submitWord(playerId: string, word: string) {
+    if (
+      this.server.gameState !== GameState.PLAYING ||
+      this.activePlayerId !== playerId
+    ) {
+      return
+    }
+    this.handleGuess(playerId, word)
+  }
+
+  public updateTyping(playerId: string, text: string) {
+    if (
+      this.server.gameState === GameState.PLAYING &&
+      this.activePlayerId === playerId
+    ) {
+      this.broadcast({
+        type: ServerMessageType.TYPING_UPDATE,
+        text: text,
+      })
+    }
+  }
+
+  public updateSettings(playerId: string, settings: any) {
+    const player = this.players.get(playerId)
+    if (!player?.isAdmin) return
+
+    const result = WordChainSettingsSchema.safeParse(settings)
+    if (result.success) {
+      const s = result.data
+      if (s.maxTimer !== undefined) this.maxTimer = s.maxTimer
+      if (s.startingLives !== undefined) {
+        this.startingLives = s.startingLives
+      }
+      if (s.chatEnabled !== undefined) this.chatEnabled = s.chatEnabled
+      if (s.gameLogEnabled !== undefined) this.gameLogEnabled = s.gameLogEnabled
+      if (s.hardModeStartRound !== undefined)
+        this.hardModeStartRound = s.hardModeStartRound
+
+      this.server.broadcastState()
     }
   }
 
@@ -214,9 +242,30 @@ export class WordChainGame extends BaseGame {
       const aliveIds = alivePlayers.map((p) => p.id)
       const currentIndex = aliveIds.indexOf(this.activePlayerId)
       let nextIndex = (currentIndex + 1) % aliveIds.length
+
       this.activePlayerId = aliveIds[nextIndex]
     } else {
       this.activePlayerId = alivePlayers[0].id
+    }
+
+    if (this.activePlayerId) {
+      if (this.playersPlayedInRound.has(this.activePlayerId)) {
+        this.round++
+        this.playersPlayedInRound.clear()
+
+        // Update Hard Mode Min Length
+        // Base is 3. Increase by 1 for every round past the start threshold
+        if (this.round >= this.hardModeStartRound) {
+          const increase = this.round - this.hardModeStartRound + 1
+          this.minLength = 3 + increase
+
+          this.broadcast({
+            type: ServerMessageType.SYSTEM_MESSAGE,
+            message: `HARD MODE! Minimum word length is now ${this.minLength}!`,
+          })
+        }
+      }
+      this.playersPlayedInRound.add(this.activePlayerId)
     }
 
     this.timer = this.maxTimer
@@ -249,6 +298,15 @@ export class WordChainGame extends BaseGame {
       this.sendTo(playerId, {
         type: ServerMessageType.ERROR,
         message: "Not in dictionary!",
+        hide: true,
+      })
+      return
+    }
+
+    if (upper.length < this.minLength) {
+      this.sendTo(playerId, {
+        type: ServerMessageType.ERROR,
+        message: `Word must be at least ${this.minLength} letters!`,
         hide: true,
       })
       return
@@ -294,6 +352,9 @@ export class WordChainGame extends BaseGame {
       gameLogEnabled: this.gameLogEnabled,
       usedWordsCount: this.usedWords.size,
       winnerId: this.winnerId,
+      round: this.round,
+      hardModeStartRound: this.hardModeStartRound,
+      minLength: this.minLength,
     }
   }
 }

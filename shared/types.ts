@@ -30,6 +30,7 @@ export const GAME_CONFIG = {
   WORD_CHAIN: {
     TIMER: { MIN: 5, MAX: 60, DEFAULT: 10 },
     LIVES: { MIN: 1, MAX: 5, DEFAULT: 2 },
+    HARD_MODE_START: { MIN: 2, MAX: 20, DEFAULT: 5 },
   },
 }
 
@@ -94,6 +95,11 @@ export const WordChainSettingsSchema = z.object({
     .number()
     .min(GAME_CONFIG.WORD_CHAIN.LIVES.MIN)
     .max(GAME_CONFIG.WORD_CHAIN.LIVES.MAX)
+    .optional(),
+  hardModeStartRound: z
+    .number()
+    .min(GAME_CONFIG.WORD_CHAIN.HARD_MODE_START.MIN)
+    .max(GAME_CONFIG.WORD_CHAIN.HARD_MODE_START.MAX)
     .optional(),
   chatEnabled: z.boolean().optional(),
   gameLogEnabled: z.boolean().optional(),
@@ -243,4 +249,7 @@ export interface WordChainServerState extends BaseServerState {
   startingLives: number
   usedWordsCount: number
   winnerId: string | null
+  round: number
+  hardModeStartRound: number
+  minLength: number
 }
