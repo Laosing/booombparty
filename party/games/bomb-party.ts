@@ -231,6 +231,10 @@ export class BombPartyGame extends BaseGame {
 
     this.turnStartTime = Date.now()
 
+    if (this.activePlayerId) {
+      this.clearTyping(this.activePlayerId)
+    }
+
     this.server.broadcastState()
   }
 
@@ -344,6 +348,7 @@ export class BombPartyGame extends BaseGame {
       this.activePlayerId === playerId &&
       typeof text === "string"
     ) {
+      this.trackTyping(playerId)
       this.broadcast({
         type: ServerMessageType.TYPING_UPDATE,
         text: text,
@@ -376,11 +381,20 @@ export class BombPartyGame extends BaseGame {
 
   handleWordSubmission(playerId: string, rawWord: string) {
     const reactionTime = Date.now() - this.turnStartTime
-    if (reactionTime < 50) {
+    if (reactionTime < 250) {
       const p = this.players.get(playerId)
       this.broadcast({
         type: ServerMessageType.ERROR,
         message: `Too fast, ${p?.name || "Player"}! Are you a bot?`,
+      })
+      return
+    }
+
+    // Bot Check: Must have typed
+    if (!this.validateTyping(playerId, 2)) {
+      this.sendTo(playerId, {
+        type: ServerMessageType.ERROR,
+        message: "Suspicious activity detected. Please type your words.",
       })
       return
     }

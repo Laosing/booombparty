@@ -72,6 +72,8 @@ describe("Word Chain Game Logic", () => {
     game.currentWord = "TEST"
 
     // Action
+    game.updateTyping(game.activePlayerId!, "T")
+    game.updateTyping(game.activePlayerId!, "TI")
     game.submitWord(game.activePlayerId!, "TIGER")
 
     expect(game.currentWord).toBe("TIGER")
@@ -97,6 +99,8 @@ describe("Word Chain Game Logic", () => {
     const activeConn = room.connections.get(game.activePlayerId!)
 
     // Action: Starts with A, expected T
+    game.updateTyping(game.activePlayerId!, "A")
+    game.updateTyping(game.activePlayerId!, "AP")
     game.submitWord(game.activePlayerId!, "APPLE")
 
     expect(game.currentWord).toBe("TEST") // Should not change
@@ -117,6 +121,8 @@ describe("Word Chain Game Logic", () => {
     const activeConn = room.connections.get(game.activePlayerId!)
 
     // Action
+    game.updateTyping(game.activePlayerId!, "T")
+    game.updateTyping(game.activePlayerId!, "TI")
     game.submitWord(game.activePlayerId!, "TIGER")
 
     expect(game.currentWord).toBe("TEST")
@@ -187,6 +193,8 @@ describe("Word Chain Game Logic", () => {
       const activeConn = room.connections.get(game.activePlayerId!)
 
       // Action: Valid start letter, valid dictionary word, but too short
+      game.updateTyping(game.activePlayerId!, "T")
+      game.updateTyping(game.activePlayerId!, "TI")
       game.submitWord(game.activePlayerId!, "TINY")
 
       expect(game.currentWord).toBe("TEST")
@@ -212,6 +220,8 @@ describe("Word Chain Game Logic", () => {
       const secondPlayerId = firstPlayerId === "p1" ? "p2" : "p1"
 
       // Player 1 plays
+      game.updateTyping(firstPlayerId, "T")
+      game.updateTyping(firstPlayerId, "TI")
       game.submitWord(firstPlayerId, "TIGER")
 
       expect(game.playersPlayedInRound.has(firstPlayerId)).toBe(true)
@@ -220,6 +230,8 @@ describe("Word Chain Game Logic", () => {
       // Player 2 plays
       expect(game.activePlayerId).toBe(secondPlayerId)
 
+      game.updateTyping(secondPlayerId, "R")
+      game.updateTyping(secondPlayerId, "RO")
       game.submitWord(secondPlayerId, "ROBOT")
 
       expect(game.activePlayerId).toBe(firstPlayerId)

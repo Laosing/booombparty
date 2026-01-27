@@ -114,8 +114,13 @@ describe("Bomb Party Game Logic", () => {
 
     const activeConn = room.connections.get(activeId)
 
-    // Advance time to pass "too fast" check (50ms)
-    vi.advanceTimersByTime(100)
+    // Advance time to pass "too fast" check (250ms)
+    vi.advanceTimersByTime(300)
+
+    // Simulate Typing (Bot protection)
+    game.updateTyping(activeId, "T")
+    game.updateTyping(activeId, "TE")
+    game.updateTyping(activeId, "TES")
 
     // 2. Submit Valid Word containing "TEST"
     game.submitWord(activeId, "TESTING")
@@ -144,6 +149,10 @@ describe("Bomb Party Game Logic", () => {
     const activeConn = room.connections.get(activeId)!
 
     game.currentSyllable = "ABC" // Syllable
+
+    // Simulate Typing
+    game.updateTyping(activeId, "X")
+    game.updateTyping(activeId, "XY")
 
     game.submitWord(activeId, "XYZ") // Does not contain ABC
 
@@ -211,7 +220,11 @@ describe("Bomb Party Game Logic", () => {
     game.currentSyllable = "TEST"
 
     // Advance time for bot check
-    vi.advanceTimersByTime(100)
+    vi.advanceTimersByTime(300)
+
+    // Simulate Typing
+    game.updateTyping(activeId, "T")
+    game.updateTyping(activeId, "TE")
 
     // Submit "TESTING" (Length 7 > 5)
     game.submitWord(activeId, "TESTING")

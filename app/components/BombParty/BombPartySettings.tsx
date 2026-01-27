@@ -88,7 +88,7 @@ export default function BombPartySettings({
       />
 
       <NumberInput
-        label="Hard Mode after number of rounds"
+        label="Hard mode after number of rounds"
         value={hardModeStartRound}
         min={GAME_CONFIG.BOMB_PARTY.HARD_MODE_START.MIN}
         max={GAME_CONFIG.BOMB_PARTY.HARD_MODE_START.MAX}

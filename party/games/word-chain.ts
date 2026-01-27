@@ -132,6 +132,7 @@ export class WordChainGame extends BaseGame {
       this.server.gameState === GameState.PLAYING &&
       this.activePlayerId === playerId
     ) {
+      this.trackTyping(playerId)
       this.broadcast({
         type: ServerMessageType.TYPING_UPDATE,
         text: text,
@@ -249,6 +250,7 @@ export class WordChainGame extends BaseGame {
     }
 
     if (this.activePlayerId) {
+      this.clearTyping(this.activePlayerId)
       if (this.playersPlayedInRound.has(this.activePlayerId)) {
         this.round++
         this.playersPlayedInRound.clear()
@@ -273,6 +275,16 @@ export class WordChainGame extends BaseGame {
   }
 
   handleGuess(playerId: string, word: string) {
+    // Bot Check: Must have typed
+    if (!this.validateTyping(playerId, 2)) {
+      this.sendTo(playerId, {
+        type: ServerMessageType.ERROR,
+        message: "Suspicious activity detected. Please type your words.",
+        hide: true,
+      })
+      return
+    }
+
     const upper = word.toUpperCase().trim()
     const lastCharOfCurrent = this.currentWord.slice(-1).toUpperCase()
 

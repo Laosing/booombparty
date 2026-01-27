@@ -58,4 +58,29 @@ export abstract class BaseGame implements GameEngine {
   protected sendTo(connectionId: string, data: any): void {
     this.server.sendTo(connectionId, data)
   }
+
+  // Bot Protection: Typing Heuristics
+  protected typingStats: Map<
+    string,
+    { count: number; firstTypingTime: number }
+  > = new Map()
+
+  protected trackTyping(playerId: string) {
+    const stats = this.typingStats.get(playerId) || {
+      count: 0,
+      firstTypingTime: Date.now(),
+    }
+    stats.count++
+    this.typingStats.set(playerId, stats)
+  }
+
+  protected clearTyping(playerId: string) {
+    this.typingStats.delete(playerId)
+  }
+
+  protected validateTyping(playerId: string, minEvents: number = 2): boolean {
+    const stats = this.typingStats.get(playerId)
+    if (!stats) return false
+    return stats.count >= minEvents
+  }
 }

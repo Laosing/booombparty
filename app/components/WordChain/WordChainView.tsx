@@ -147,7 +147,7 @@ export default function WordChainView({
                 settings={[
                   `Timer: ${maxTimer}s`,
                   `Lives: ${startingLives}`,
-                  `Hard mode after round: ${hardModeStartRound}`,
+                  `Hard mode after: ${hardModeStartRound} rounds`,
                 ]}
               />
 
